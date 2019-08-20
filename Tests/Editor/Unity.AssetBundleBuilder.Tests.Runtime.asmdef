@@ -1,0 +1,18 @@
+{
+    "name": "Unity.AssetBundleBuilder.Tests.Editor",
+    "references": [
+        "Unity.AssetBundleBuilder.Runtime"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": []
+}

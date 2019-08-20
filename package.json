@@ -1,0 +1,12 @@
+{
+  "name": "com.synapse-games.bundle-builder",
+  "version": "0.1.0",
+  "displayName": "Asset Bundle Builder",
+  "description": "A system for automatically building, managing, and publishing asset bundles.",
+  "unity": "2018.3",
+  "author": {
+    "name": "David LeGare",
+    "email": "dlegare.1001@gmail.com",
+    "url": "https://randompoison.github.io"
+  }
+}

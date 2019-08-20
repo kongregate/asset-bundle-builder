@@ -1,0 +1,17 @@
+{
+    "name": "Unity.AssetBundleBuilder.Editor",
+    "references": [
+        "Unity.EditorCoroutines.Editor",
+        "Unity.AssetBundleBuilder.Runtime"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
