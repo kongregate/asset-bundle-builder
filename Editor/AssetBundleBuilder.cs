@@ -142,7 +142,7 @@ namespace SynapseGames.AssetBundle
                 .Distinct()
                 .ToArray();
 
-            var descriptions = new Dictionary<string, AssetBundleDescription>();
+            var descriptions = new Dictionary<string, Dictionary<AssetBundleTarget, Hash128>>();
             foreach (var target in buildTargets)
             {
                 var buildDirectory = GetBuildPathForBuildTarget(target);
@@ -164,20 +164,22 @@ namespace SynapseGames.AssetBundle
                 {
                     // Get the existing description object for the current bundle, or
                     // create a new one and add it to the description dictionary.
-                    AssetBundleDescription description;
-                    if (!descriptions.TryGetValue(bundleName, out description))
+                    Dictionary<AssetBundleTarget, Hash128> hashes;
+                    if (!descriptions.TryGetValue(bundleName, out hashes))
                     {
-                        description = new AssetBundleDescription(bundleName);
-                        descriptions.Add(bundleName, description);
+                        hashes = new Dictionary<AssetBundleTarget, Hash128>();
+                        descriptions.Add(bundleName, hashes);
                     }
 
                     // Set the hash for the current build target.
                     var bundleTarget = GetBundleTarget(target);
-                    description.Hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
+                    hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
                 }
             }
 
-            return descriptions.Values.ToArray();
+            return descriptions
+                .Select(pair => new AssetBundleDescription(pair.Key, pair.Value))
+                .ToArray();
         }
 
         public static AssetBundleTarget GetBundleTarget(BuildTarget target)
