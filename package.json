@@ -1,5 +1,5 @@
 {
-  "name": "com.synapse-games.bundle-builder",
+  "name": "com.synapse-games.asset-bundle-builder",
   "version": "0.1.0",
   "displayName": "Asset Bundle Builder",
   "description": "A system for automatically building, managing, and publishing asset bundles.",
