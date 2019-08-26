@@ -33,12 +33,14 @@ namespace SynapseGames.AssetBundle
         /// The file name for the current platform, if any. Will be null if there is no
         /// hash for the current platform.
         /// </summary>
+        [JsonIgnore]
         public string FileNameForCurrentTarget => GetFileNameForTarget(CurrentTarget);
 
         /// <summary>
         /// The asset hash for the current platform, if any. Will be null if there is
         /// no hash for the current platform.
         /// </summary>
+        [JsonIgnore]
         public Hash128? HashForCurrentTarget => GetHashForTarget(CurrentTarget);
 
         /// <summary>
@@ -49,6 +51,7 @@ namespace SynapseGames.AssetBundle
         /// This path will be inside the streaming assets path, which may require
         /// platform-specific considerations when loading.
         /// </remarks>
+        [JsonIgnore]
         public string EmbeddedPath => Path.Combine(
             Application.streamingAssetsPath,
             "EmbeddedAssetBundles",
