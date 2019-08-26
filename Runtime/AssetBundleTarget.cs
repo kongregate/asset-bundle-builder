@@ -6,7 +6,7 @@ namespace SynapseGames.AssetBundle
     ///
     /// <remarks>
     /// <para>
-    /// The purpose of this target is to identify which target platform an asset bundle
+    /// The purpose of this enum is to identify which target platform an asset bundle
     /// can be used on. When building bundles, the <see cref="UnityEditor.BuildTarget"/>
     /// enum is used, however that enum is not available at runtime. This enum allows us
     /// to use the same platform identifiers at built time and runtime.

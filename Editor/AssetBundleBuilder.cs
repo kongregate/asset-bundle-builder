@@ -398,6 +398,8 @@ namespace SynapseGames.AssetBundle
                 case BuildTarget.WebGL:
                     return AssetBundleTarget.WebGL;
 
+                // TODO: Support for other platforms.
+
                 default:
                     throw new ArgumentException($"Cannot determine asset bundle target for unsupported build target {target}");
             }
