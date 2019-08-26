@@ -23,6 +23,22 @@ To include asset-bundle-builder as a Unity package, you'll need to be on Unity 2
 }
 ```
 
+You'll also need to add a scoped dependency for "jillejr" pointing to the NPM public registry in order to correctly pull in the [Json.NET dependency](https://www.npmjs.com/package/jillejr.newtonsoft.json-for-unity):
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "Packages published to NPM",
+      "url": "https://registry.npmjs.org/",
+      "scopes": [
+        "jillejr"
+      ]
+    }
+  ]
+}
+```
+
 > NOTE: You'll need to have Git installed on your development machine for Unity to be able to download the dependency. See https://git-scm.com/ for more information. Alternatively, you can clone the project directly into your `Packages` folder in order to vendor the package with your project.
 
 > NOTE: If you're using an older version of Unity, you can still use bundle-builder by copying the contents of `Plugins` into your project's `Plugins` folder.
