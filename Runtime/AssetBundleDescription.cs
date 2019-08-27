@@ -71,7 +71,7 @@ namespace SynapseGames.AssetBundle
         /// Used with <see cref="UnityEngine.Networking.UnityWebRequestAssetBundle.GetAssetBundle"/>.
         /// </remarks>
         [JsonIgnore]
-        public CachedAssetBundle? CachedAssetBundle => GetCachedAssetBundleForTarget(CurrentTarget);
+        public CachedAssetBundle? CachedAssetBundleForCurrentTarget => GetCachedAssetBundleForTarget(CurrentTarget);
 
         /// <summary>
         /// Initializes a new <see cref="AssetBundleDescription"/>.
