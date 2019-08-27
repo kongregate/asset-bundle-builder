@@ -330,7 +330,7 @@ namespace SynapseGames.AssetBundle
                 .Distinct()
                 .ToArray();
 
-            var descriptions = new Dictionary<string, Dictionary<AssetBundleTarget, Hash128>>();
+            var descriptions = new Dictionary<string, (Dictionary<AssetBundleTarget, Hash128> hashes, HashSet<string> dependencies)>();
             foreach (var target in buildTargets)
             {
                 var buildDirectory = GetBuildPathForBuildTarget(target);
@@ -352,21 +352,25 @@ namespace SynapseGames.AssetBundle
                 {
                     // Get the existing description object for the current bundle, or
                     // create a new one and add it to the description dictionary.
-                    Dictionary<AssetBundleTarget, Hash128> hashes;
-                    if (!descriptions.TryGetValue(bundleName, out hashes))
+                    if (!descriptions.TryGetValue(bundleName, out var description))
                     {
-                        hashes = new Dictionary<AssetBundleTarget, Hash128>();
-                        descriptions.Add(bundleName, hashes);
+                        // The first time we create the list of description objects,
+                        // popuplate the set of dependencies.
+                        var dependencies = new HashSet<string>(
+                            manifest.GetDirectDependencies(bundleName));
+
+                        description = (new Dictionary<AssetBundleTarget, Hash128>(), dependencies);
+                        descriptions.Add(bundleName, description);
                     }
 
                     // Set the hash for the current build target.
                     var bundleTarget = GetBundleTarget(target);
-                    hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
+                    description.hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
                 }
             }
 
             return descriptions
-                .Select(pair => new AssetBundleDescription(pair.Key, pair.Value))
+                .Select(pair => new AssetBundleDescription(pair.Key, pair.Value.hashes, pair.Value.dependencies))
                 .ToArray();
         }
 

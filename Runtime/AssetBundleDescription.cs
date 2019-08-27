@@ -29,6 +29,9 @@ namespace SynapseGames.AssetBundle
         [JsonProperty("name")]
         public string Name { get; }
 
+        [JsonProperty("dependencies")]
+        public HashSet<string> Dependencies { get; }
+
         /// <summary>
         /// The file name for the current platform, if any. Will be null if there is no
         /// hash for the current platform.
@@ -49,13 +52,26 @@ namespace SynapseGames.AssetBundle
         ///
         /// <remarks>
         /// This path will be inside the streaming assets path, which may require
-        /// platform-specific considerations when loading.
+        /// platform-specific considerations when loading. This also does not guarantee
+        /// that the bundle is actually embedded in the player, it only provides the
+        /// path where the file would be stored if it were embedded.
         /// </remarks>
         [JsonIgnore]
         public string EmbeddedPath => Path.Combine(
             Application.streamingAssetsPath,
             "EmbeddedAssetBundles",
             Name);
+
+        /// <summary>
+        /// Cache key to use when downloading the asset bundle for the current platform.
+        /// Will be null if there is no asset hash for the current platform.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// Used with <see cref="UnityEngine.Networking.UnityWebRequestAssetBundle.GetAssetBundle"/>.
+        /// </remarks>
+        [JsonIgnore]
+        public CachedAssetBundle? CachedAssetBundle => GetCachedAssetBundleForTarget(CurrentTarget);
 
         /// <summary>
         /// Initializes a new <see cref="AssetBundleDescription"/>.
@@ -71,9 +87,13 @@ namespace SynapseGames.AssetBundle
         /// loaded on any platforms not specified.
         /// </param>
         [JsonConstructor]
-        public AssetBundleDescription(string name, Dictionary<AssetBundleTarget, Hash128> hashes)
+        public AssetBundleDescription(
+            string name,
+            Dictionary<AssetBundleTarget, Hash128> hashes,
+            HashSet<string> dependencies)
         {
             Name = name;
+            Dependencies = dependencies;
             _hashes = hashes;
         }
 
@@ -82,9 +102,8 @@ namespace SynapseGames.AssetBundle
         /// and hases from <paramref name="other"/>.
         /// </summary>
         public AssetBundleDescription(AssetBundleDescription other)
+            : this(other.Name, other._hashes, other.Dependencies)
         {
-            Name = other.Name;
-            _hashes = other._hashes;
         }
 
         /// <summary>
@@ -118,6 +137,24 @@ namespace SynapseGames.AssetBundle
             if (_hashes.TryGetValue(target, out var hash))
             {
                 return hash;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Cache key to use when downloading the asset bundle for the specified platform.
+        /// Will be null if there is no asset hash for the specified platform.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// Used with <see cref="UnityEngine.Networking.UnityWebRequestAssetBundle.GetAssetBundle"/>.
+        /// </remarks>
+        public CachedAssetBundle? GetCachedAssetBundleForTarget(AssetBundleTarget target)
+        {
+            if (_hashes.TryGetValue(target, out var hash))
+            {
+                return new CachedAssetBundle(Name, hash);
             }
 
             return null;
@@ -184,7 +221,7 @@ namespace SynapseGames.AssetBundle
                 }
             }
 
-            return true;
+            return Dependencies.SetEquals(other.Dependencies);
         }
 
         /// <summary>
