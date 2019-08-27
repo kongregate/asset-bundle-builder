@@ -97,16 +97,16 @@ In general, the easiest way to determine the name of the file to download is the
 
 > NOTE: This package doesn't provided any utilities for determining the full URL of your hosted bundles, nor does it provide any specific utilities for downloading, loading, or managing your asset bundles at runtime.
 
-## Specification
+## Additional Documentation
 
-The following are the specific details of how this package 
+This section more thoroughly explains the specifics of how asset-bundle-builder manages the asset bundles in your project.
 
 ### AssetBundle File Naming
 
 The generated bundle files are named according to the pattern `{name}_{platform}_{hash}.unity3d`, where:
 
 * `{name}` is the bundle name, as defined in the Unity project.
-* `{platform}` is the target platform string, matching the variant names for [`BuildTarget`](https://docs.unity3d.com/ScriptReference/BuildTarget.html).
+* `{platform}` is the target platform string, matching the variant names for `AssetBundleTarget` (see [Platform Support](#platform-support) below).
 * `{hash}` is the asset hash of the built bundle, determined when the bundle is built.
 
 This naming conventions serves a number of purposes:
@@ -117,41 +117,58 @@ This naming conventions serves a number of purposes:
 
 ### Platform Support
 
-For platforms with multiple target architectures, bundles are only built once for all architectures. The platform name used is always the base platform name without an architecture-specific suffix (e.g. "StandaloneWindows" is used for both the `StandaloneWindows` and `StandaloneWindows64` build targets).
+Unity uses the `BuildTarget` enum when building asset bundles and the `RuntimePlatform` enum to specify the current platform at runtime. Unfortunately, neither of these accurately reflects the set of platform-specific asset bundles that need to be built.  To address this, asset-bundle-builder defines the `AssetBundleTarget` enum identify the set of platforms that must have their own asset bundles.
+
+For most platforms with multiple target architectures, bundles are only built once for all architectures. The platform name used is always the base platform name without an architecture-specific suffix (e.g. "StandaloneWindows" is used for both the `StandaloneWindows` and `StandaloneWindows64` build targets). The exception to this is Windows Store Applications, which do require architecture-specific assets.
 
 > NOTE: Not all platforms have been added to the `AssetBundleTarget` enum, and there are some outstanding questions that need to be answered in order to determine what constitutes a distinct "platform" for the purpose of building/loading asset bundles. See [this thread on the Unity forums](https://forum.unity.com/threads/do-macos-and-windows-need-different-asset-bundles.670510/) to follow the discussion.
 
 ### Hosting AssetBundles
 
-Built bundles are stored in a single folder in the CDN. This includes the live version of any given bundle, as well as any unpublished versions still in development.
+Built bundles are expected to be hosted in a single folder on a remote server or CDN. This includes both the live version of any given bundle as well as any unpublished versions still in development. At any given time, the full set of asset bundles generated from the project can be uploaded to your hosting server without risking existing bundles being overwritten or broken.
+
+>  NOTE: This package doesn't strictly require or enforce this convention for hosting your asset bundles, but it does provide a default workflow to support it. As such, following this convention will ensure a smoother build and deployment process for your game's asset bundles.
 
 ### Bundle Description List
 
-- The bundle description JSON determines which version of a bundle (specified by the platform-specific asset hash) is live at any given time.
-- The build process generates a dev bundle description file containing the current hashes for all bundles bundles. New versions of a bundle are deployed by moving the latest hashes over from the dev description file to the live description file.
-- When specifying the set of live bundles the client, the server may either directly provide the client with the bundle description JSON, or it may process the description JSON and provide the client with data in a different format to meet game specific needs.
-  - If the bundle description JSON is passed directly, the client must know the base URL where bundles are stored so that it can put together the final URL for the bundles.
-  - If the server sends the client custom data, it must provide the following information in order to for the client to be able to download the bundles:
-    - Either the full filename for the bundle, or separately provide the name, platform string, and hash so that the client can construct the file name itself.
-    - The asset hash for the client's target platform. This is necessary so that client can know if it already has the bundle cached locally or not.
+This package supports generating a list of "bundle description" objects which specify the necessary information for loading your asset bundles at runtime. It also provides out-of-the-box functionality for converting this list to and from a JSON document for use at runtime.
 
-JSON example:
+For each asset bundle defined in your project, the bundle description will contain:
+
+* The name of the bundle.
+* The set of supported platforms and the corresponding asset hash for each one.
+* The list of direct dependencies for each bundle.
+
+This is the information needed at runtime to determine which bundles your game's client should download and to determine the correct filename to download for a given bundle. The `AssetBundleDescription` class provides utilities for accessing this information.
+
+#### JSON Conversion
+
+Written out to JSON it would looks like this:
 
 ```json
 [
     {
         "name": "bundle-1",
         "hashes": {
-            "Android": "dvdvdvdvdvsdvasdvasdvav",
-            "iOS": "aevasevasevasevasevasevasev"
-        }
+            "Android": "84dd10474d639ecc804d8fa3088887a2",
+            "iOS": "4c92bf45a5c9e0281254cc7ad07690e9"
+        },
+        "dependencies": []
     },
     {
         "name": "cool-stuff",
         "hashes": {
-            "Android": "asdfasdfasdf",
-            "iOS": "asdfasdfasdfasdf"
-        }
+            "Android": "301c62868060808f10b236e1de1dfaa8",
+            "iOS": "90c94041de4ee425eb9ab23b9aa96021"
+        },
+        "dependencies": ["bundle-1"]
     }
 ]
 ```
+
+#### Differences From `AssetBundleManifest`
+
+Unity already provides the `AssetBundleManifest` asset to determine the hash and dependencies for each bundle, so why provide a separate system for providing that data at runtime? There are two primary reasons for this:
+
+* `AssetBundleManifest` always contains the full set of asset bundles as contained in your Unity project when you build your bundles. This means that you can't choose when individual bundles are deployed: If you push the latest bundle manifest, all of your asset bundles are now live. Using a less opaque data format like JSON allows you to maintain a separate list of live bundles and manually choose when to move each bundle into production. Keeping information for all platforms in one file, rather than having a separate file per platform, further eases this process.
+* The format is more extensible, since you can create a subclass of `AssetBundleDescription` and add custom data. The `JsonTests.cs` script contains an example of how to do this.
