@@ -11,6 +11,8 @@ The goal of this system is to make it easy to continuously update and deploy ass
 - You would like to be able to automate the build and upload process for asset bundles as part of your CI process.
 - Storage for built bundles isn't an issue (i.e. you're using Amazon S3 or some other cloud storage service), but you would like to limit when new bundles are deployed to minimize how often players need to download updated bundles.
 
+> NOTE: If you are starting a new Unity project and are considering using asset-bundle-builder, consider using Unity's newer [Addressable Asset System](https://blogs.unity3d.com/2019/07/15/addressable-asset-system/) instead. This system is mainly intended for projects that are already using asset bundles and are heavily invested in the asset bundle workflow.
+
 ## Setup and Usage
 
 To include asset-bundle-builder as a Unity package, you'll need to be on Unity 2018.3 or later. Open `Packages/manifest.json` in your project and add "com.synapse-games.asset-bundle-builder" to the `dependencies` object:
@@ -172,3 +174,7 @@ Unity already provides the `AssetBundleManifest` asset to determine the hash and
 
 * `AssetBundleManifest` always contains the full set of asset bundles as contained in your Unity project when you build your bundles. This means that you can't choose when individual bundles are deployed: If you push the latest bundle manifest, all of your asset bundles are now live. Using a less opaque data format like JSON allows you to maintain a separate list of live bundles and manually choose when to move each bundle into production. Keeping information for all platforms in one file, rather than having a separate file per platform, further eases this process.
 * The format is more extensible, since you can create a subclass of `AssetBundleDescription` and add custom data. The `JsonTests.cs` script contains an example of how to do this.
+
+### Compatibility with Addressables
+
+In July of 2019 Unity moved their [Addressable Asset System](https://blogs.unity3d.com/2019/07/15/addressable-asset-system/) out of preview status. This system is designed to replace asset bundles, and seeks to address many of the same use cases as asset-bundle-builder. Unfortunately, this package is not currently compatible with addressables, and it is not clear if compatibility is possible. If you believe you have a solution for migrating projects using asset-bundle-builder to the addressable asset system, please [open an issue](https://github.com/kongregate/asset-bundle-builder/issues/new) with your suggestion so that we can discuss integrating that functionality in the package!
