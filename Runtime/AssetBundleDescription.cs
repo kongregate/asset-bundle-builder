@@ -19,7 +19,7 @@ namespace SynapseGames.AssetBundle
     /// </remarks>
     public struct AssetBundleDescription : IEquatable<AssetBundleDescription>
     {
-        private Dictionary<AssetBundleTarget, Hash128> _hashes;
+        private Dictionary<RuntimePlatform, Hash128> _hashes;
         private HashSet<string> _dependencies;
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace SynapseGames.AssetBundle
         /// <summary>
         /// The set of supported platforms and their corresponding asset hashes.
         /// </summary>
-        public IReadOnlyDictionary<AssetBundleTarget, Hash128> Hashes => _hashes;
+        public IReadOnlyDictionary<RuntimePlatform, Hash128> Hashes => _hashes;
 
         public IReadOnlyCollection<string> Dependencies => _dependencies;
 
@@ -38,13 +38,13 @@ namespace SynapseGames.AssetBundle
         /// The file name for the current platform, if any. Will be null if there is no
         /// hash for the current platform.
         /// </summary>
-        public string FileNameForCurrentTarget => GetFileNameForTarget(CurrentTarget);
+        public string FileNameForCurrentTarget => GetFileNameForPlatform(NormalizedPlatform);
 
         /// <summary>
         /// The asset hash for the current platform, if any. Will be null if there is
         /// no hash for the current platform.
         /// </summary>
-        public Hash128? HashForCurrentTarget => GetHashForTarget(CurrentTarget);
+        public Hash128? HashForCurrentTarget => GetHashForPlatform(NormalizedPlatform);
 
         /// <summary>
         /// The path to the asset bundle when it is distributed as an embedded bundle.
@@ -62,16 +62,6 @@ namespace SynapseGames.AssetBundle
             Name);
 
         /// <summary>
-        /// Cache key to use when downloading the asset bundle for the current platform.
-        /// Will be null if there is no asset hash for the current platform.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// Used with <see cref="UnityEngine.Networking.UnityWebRequestAssetBundle.GetAssetBundle"/>.
-        /// </remarks>
-        public CachedAssetBundle? CachedAssetBundleForCurrentTarget => GetCachedAssetBundleForTarget(CurrentTarget);
-
-        /// <summary>
         /// Initializes a new <see cref="AssetBundleDescription"/>.
         /// </summary>
         ///
@@ -86,7 +76,7 @@ namespace SynapseGames.AssetBundle
         /// </param>
         public AssetBundleDescription(
             string name,
-            Dictionary<AssetBundleTarget, Hash128> hashes,
+            Dictionary<RuntimePlatform, Hash128> hashes,
             HashSet<string> dependencies)
         {
             Name = name;
@@ -111,11 +101,16 @@ namespace SynapseGames.AssetBundle
         /// The file name for the specified target platform, or null if no hash is
         /// present for that platform.
         /// </returns>
-        public string GetFileNameForTarget(AssetBundleTarget target)
+        ///
+        /// <remarks>
+        /// Automatically normalizes <paramref name="platform"/> with <see cref="NormalizePlatform(RuntimePlatform)"/>.
+        /// </remarks>
+        public string GetFileNameForPlatform(RuntimePlatform platform)
         {
-            if (Hashes.TryGetValue(target, out var hash))
+            platform = NormalizePlatform(platform);
+            if (Hashes.TryGetValue(platform, out var hash))
             {
-                return $"{Name}_{target}_{hash}";
+                return $"{Name}_{platform}_{hash}";
             }
 
             return null;
@@ -129,29 +124,16 @@ namespace SynapseGames.AssetBundle
         /// The asset hash for the specified platform, or null if no hash is present
         /// for that platform.
         /// </returns>
-        public Hash128? GetHashForTarget(AssetBundleTarget target)
-        {
-            if (Hashes.TryGetValue(target, out var hash))
-            {
-                return hash;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Cache key to use when downloading the asset bundle for the specified platform.
-        /// Will be null if there is no asset hash for the specified platform.
-        /// </summary>
         ///
         /// <remarks>
-        /// Used with <see cref="UnityEngine.Networking.UnityWebRequestAssetBundle.GetAssetBundle"/>.
+        /// Automatically normalizes <paramref name="platform"/> with <see cref="NormalizePlatform(RuntimePlatform)"/>.
         /// </remarks>
-        public CachedAssetBundle? GetCachedAssetBundleForTarget(AssetBundleTarget target)
+        public Hash128? GetHashForPlatform(RuntimePlatform platform)
         {
-            if (Hashes.TryGetValue(target, out var hash))
+            platform = NormalizePlatform(platform);
+            if (Hashes.TryGetValue(platform, out var hash))
             {
-                return new CachedAssetBundle(Name, hash);
+                return hash;
             }
 
             return null;
@@ -177,8 +159,10 @@ namespace SynapseGames.AssetBundle
         {
             int hash = Name.GetHashCode();
 
-            // Iterate over the variants of AssetBundleTarget in order to hash the values in the dictionary in a deterministic order.
-            var variants = Enum.GetValues(typeof(AssetBundleTarget)).Cast<AssetBundleTarget>();
+            // NOTE: We iterate over the variants of RuntimePlatform, rather than
+            // directly iterating over the contents of Hashes, in order to hash the
+            // values in the dictionary in a deterministic order.
+            var variants = Enum.GetValues(typeof(RuntimePlatform)).Cast<RuntimePlatform>();
             foreach (var variant in variants)
             {
                 Hash128 platformHash;
@@ -227,33 +211,32 @@ namespace SynapseGames.AssetBundle
         /// <remarks>
         /// Uses <see cref="Application.platform"/> to determine the current runtime platform.
         /// </remarks>
-        public static AssetBundleTarget CurrentTarget => BundleTargetForPlatform(Application.platform);
+        public static RuntimePlatform NormalizedPlatform => NormalizePlatform(Application.platform);
 
         /// <summary>
         /// Returns the appropriate asset bundle target for the specified platform.
         /// </summary>
-        public static AssetBundleTarget BundleTargetForPlatform(RuntimePlatform platform)
+        ///
+        /// <remarks>
+        /// For editor platforms, this will return corresponding platform's player
+        /// since the editor does not use different asset bundles from the
+        /// corresponding platform.
+        /// </remarks>
+        public static RuntimePlatform NormalizePlatform(RuntimePlatform platform)
         {
             switch (platform)
             {
                 case RuntimePlatform.WindowsEditor:
                 case RuntimePlatform.WindowsPlayer:
-                    return AssetBundleTarget.StandaloneWindows;
+                    return RuntimePlatform.WindowsPlayer;
 
                 case RuntimePlatform.OSXEditor:
                 case RuntimePlatform.OSXPlayer:
-                    return AssetBundleTarget.StandaloneOSX;
+                    return RuntimePlatform.OSXPlayer;
 
-                case RuntimePlatform.Android:
-                    return AssetBundleTarget.Android;
-
-                case RuntimePlatform.IPhonePlayer:
-                    return AssetBundleTarget.iOS;
-
-                case RuntimePlatform.WebGLPlayer:
-                    return AssetBundleTarget.WebGL;
-
-                // TODO: Add support for other platforms.
+                case RuntimePlatform.LinuxEditor:
+                case RuntimePlatform.LinuxPlayer:
+                    return RuntimePlatform.LinuxPlayer;
 
                 default:
                     throw new NotImplementedException($"Cannot determine asset bundle target for unsupported platform {Application.platform}");

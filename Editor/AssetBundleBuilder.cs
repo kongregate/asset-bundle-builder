@@ -330,7 +330,7 @@ namespace SynapseGames.AssetBundle
                 .Distinct()
                 .ToArray();
 
-            var descriptions = new Dictionary<string, (Dictionary<AssetBundleTarget, Hash128> hashes, HashSet<string> dependencies)>();
+            var descriptions = new Dictionary<string, (Dictionary<RuntimePlatform, Hash128> hashes, HashSet<string> dependencies)>();
             foreach (var target in buildTargets)
             {
                 var buildDirectory = GetBuildPathForBuildTarget(target);
@@ -359,7 +359,7 @@ namespace SynapseGames.AssetBundle
                         var dependencies = new HashSet<string>(
                             manifest.GetDirectDependencies(bundleName));
 
-                        description = (new Dictionary<AssetBundleTarget, Hash128>(), dependencies);
+                        description = (new Dictionary<RuntimePlatform, Hash128>(), dependencies);
                         descriptions.Add(bundleName, description);
                     }
 
@@ -377,30 +377,30 @@ namespace SynapseGames.AssetBundle
         /// <summary>
         /// Gets the corresponding <see cref="AssetBundleTarget"/> for the specified <see cref="BuildTarget"/>.
         /// </summary>
-        public static AssetBundleTarget GetBundleTarget(BuildTarget target)
+        public static RuntimePlatform GetBundleTarget(BuildTarget target)
         {
             switch (target)
             {
                 case BuildTarget.StandaloneWindows:
                 case BuildTarget.StandaloneWindows64:
-                    return AssetBundleTarget.StandaloneWindows;
+                    return RuntimePlatform.WindowsPlayer;
 
                 case BuildTarget.StandaloneOSX:
-                    return AssetBundleTarget.StandaloneOSX;
+                    return RuntimePlatform.OSXPlayer;
 
                 case BuildTarget.StandaloneLinux:
                 case BuildTarget.StandaloneLinux64:
                 case BuildTarget.StandaloneLinuxUniversal:
-                    return AssetBundleTarget.StandaloneLinux;
+                    return RuntimePlatform.LinuxPlayer;
 
                 case BuildTarget.Android:
-                    return AssetBundleTarget.Android;
+                    return RuntimePlatform.Android;
 
                 case BuildTarget.iOS:
-                    return AssetBundleTarget.iOS;
+                    return RuntimePlatform.IPhonePlayer;
 
                 case BuildTarget.WebGL:
-                    return AssetBundleTarget.WebGL;
+                    return RuntimePlatform.WebGLPlayer;
 
                 // TODO: Support for other platforms.
 

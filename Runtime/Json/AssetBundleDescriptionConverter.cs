@@ -19,10 +19,10 @@ namespace SynapseGames.AssetBundle.Json
 
             var name = jsonObject.Value<string>("name");
 
-            var hashes = new Dictionary<AssetBundleTarget, Hash128>();
+            var hashes = new Dictionary<RuntimePlatform, Hash128>();
             foreach (var property in jsonObject.Value<JObject>("hashes"))
             {
-                if (!Enum.TryParse(property.Key, out AssetBundleTarget platform))
+                if (!Enum.TryParse(property.Key, out RuntimePlatform platform))
                 {
                     throw new JsonSerializationException($"Could not parse unknown asset bundle target {property.Key}");
                 }

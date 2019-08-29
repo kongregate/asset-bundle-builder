@@ -13,10 +13,10 @@ public class JsonTests
         ""name"": ""bundle-1"",
         ""hashes"": {
           ""Android"": ""982415458cdaf4e60c420f75fe6c8e8b"",
-          ""iOS"": ""bd7a32acc8931e77eb1174baff409f21"",
-          ""StandaloneWindows"": ""5425682f11f1eeb1b0ac7e4580cd2237"",
-          ""StandaloneOSX"": ""4a8250d93de151328fe1651096ec8bc1"",
-          ""WebGL"": ""bc341e351d4813630d417d33558a51ed""
+          ""IPhonePlayer"": ""bd7a32acc8931e77eb1174baff409f21"",
+          ""WindowsPlayer"": ""5425682f11f1eeb1b0ac7e4580cd2237"",
+          ""OSXPlayer"": ""4a8250d93de151328fe1651096ec8bc1"",
+          ""WebGLPlayer"": ""bc341e351d4813630d417d33558a51ed""
         },
         ""dependencies"": []
       },
@@ -24,10 +24,10 @@ public class JsonTests
         ""name"": ""bundle-10"",
         ""hashes"": {
           ""Android"": ""7de37f7cd9eca4b2a6c9216c6cda8d0c"",
-          ""iOS"": ""e3fe65f3b2b19e4d1550cd7210ca5e0d"",
-          ""StandaloneWindows"": ""18a5260b52e33fa6e54ff67e14b6c979"",
-          ""StandaloneOSX"": ""25296e04f8fac4a875b4f774b7bea1ba"",
-          ""WebGL"": ""7a9b673950467554cad5f25f0ec70da5""
+          ""IPhonePlayer"": ""e3fe65f3b2b19e4d1550cd7210ca5e0d"",
+          ""WindowsPlayer"": ""18a5260b52e33fa6e54ff67e14b6c979"",
+          ""OSXPlayer"": ""25296e04f8fac4a875b4f774b7bea1ba"",
+          ""WebGLPlayer"": ""7a9b673950467554cad5f25f0ec70da5""
         },
         ""dependencies"": [""bundle-1""]
       }
@@ -39,10 +39,10 @@ public class JsonTests
         ""name"": ""bundle-1"",
         ""hashes"": {
           ""Android"": ""982415458cdaf4e60c420f75fe6c8e8b"",
-          ""iOS"": ""bd7a32acc8931e77eb1174baff409f21"",
-          ""StandaloneWindows"": ""5425682f11f1eeb1b0ac7e4580cd2237"",
-          ""StandaloneOSX"": ""4a8250d93de151328fe1651096ec8bc1"",
-          ""WebGL"": ""bc341e351d4813630d417d33558a51ed""
+          ""IPhonePlayer"": ""bd7a32acc8931e77eb1174baff409f21"",
+          ""WindowsPlayer"": ""5425682f11f1eeb1b0ac7e4580cd2237"",
+          ""OSXPlayer"": ""4a8250d93de151328fe1651096ec8bc1"",
+          ""WebGLPlayer"": ""bc341e351d4813630d417d33558a51ed""
         },
         ""dependencies"": []
       }
@@ -52,25 +52,25 @@ public class JsonTests
     {
         new AssetBundleDescription(
             "bundle-1",
-            new Dictionary<AssetBundleTarget, Hash128>()
+            new Dictionary<RuntimePlatform, Hash128>()
             {
-                { AssetBundleTarget.Android, Hash128.Parse("982415458cdaf4e60c420f75fe6c8e8b") },
-                { AssetBundleTarget.iOS, Hash128.Parse("bd7a32acc8931e77eb1174baff409f21") },
-                { AssetBundleTarget.StandaloneWindows, Hash128.Parse("5425682f11f1eeb1b0ac7e4580cd2237") },
-                { AssetBundleTarget.StandaloneOSX, Hash128.Parse("4a8250d93de151328fe1651096ec8bc1") },
-                { AssetBundleTarget.WebGL, Hash128.Parse("bc341e351d4813630d417d33558a51ed") },
+                { RuntimePlatform.Android, Hash128.Parse("982415458cdaf4e60c420f75fe6c8e8b") },
+                { RuntimePlatform.IPhonePlayer, Hash128.Parse("bd7a32acc8931e77eb1174baff409f21") },
+                { RuntimePlatform.WindowsPlayer, Hash128.Parse("5425682f11f1eeb1b0ac7e4580cd2237") },
+                { RuntimePlatform.OSXPlayer, Hash128.Parse("4a8250d93de151328fe1651096ec8bc1") },
+                { RuntimePlatform.WebGLPlayer, Hash128.Parse("bc341e351d4813630d417d33558a51ed") },
             },
             new HashSet<string>()),
 
         new AssetBundleDescription(
             "bundle-10",
-            new Dictionary<AssetBundleTarget, Hash128>()
+            new Dictionary<RuntimePlatform, Hash128>()
             {
-                { AssetBundleTarget.Android, Hash128.Parse("7de37f7cd9eca4b2a6c9216c6cda8d0c") },
-                { AssetBundleTarget.iOS, Hash128.Parse("e3fe65f3b2b19e4d1550cd7210ca5e0d") },
-                { AssetBundleTarget.StandaloneWindows, Hash128.Parse("18a5260b52e33fa6e54ff67e14b6c979") },
-                { AssetBundleTarget.StandaloneOSX, Hash128.Parse("25296e04f8fac4a875b4f774b7bea1ba") },
-                { AssetBundleTarget.WebGL, Hash128.Parse("7a9b673950467554cad5f25f0ec70da5") },
+                { RuntimePlatform.Android, Hash128.Parse("7de37f7cd9eca4b2a6c9216c6cda8d0c") },
+                { RuntimePlatform.IPhonePlayer, Hash128.Parse("e3fe65f3b2b19e4d1550cd7210ca5e0d") },
+                { RuntimePlatform.WindowsPlayer, Hash128.Parse("18a5260b52e33fa6e54ff67e14b6c979") },
+                { RuntimePlatform.OSXPlayer, Hash128.Parse("25296e04f8fac4a875b4f774b7bea1ba") },
+                { RuntimePlatform.WebGLPlayer, Hash128.Parse("7a9b673950467554cad5f25f0ec70da5") },
             },
             new HashSet<string>() { "bundle-1" }),
     };
@@ -112,7 +112,7 @@ public class JsonTests
 
         Assert.AreEqual("bundle-1", description.Bundle.Name);
         Assert.AreEqual("Some cool stuff over here", description.CustomData);
-        Assert.AreEqual(Hash128.Parse("982415458cdaf4e60c420f75fe6c8e8b"), description.Bundle.GetHashForTarget(AssetBundleTarget.Android));
+        Assert.AreEqual(Hash128.Parse("982415458cdaf4e60c420f75fe6c8e8b"), description.Bundle.GetHashForPlatform(RuntimePlatform.Android));
     }
 }
 

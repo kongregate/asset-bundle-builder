@@ -1,4 +1,4 @@
-# AssetBundle Builder
+# Asset Bundle Builder
 
 This tool provides a workflow for managing and automating the process of building, uploading, and deploying asset bundles for Unity 3D games. It extends the built-in Unity tools be defining a convention for how bundles are named, where they are stored, how they are tracked, and how they are downloaded, such that it's easy to continually release updates to asset bundles for a live game.
 
@@ -109,12 +109,12 @@ In general, the easiest way to determine the name of the file to download is the
 
 This section more thoroughly explains the specifics of how asset-bundle-builder manages the asset bundles in your project.
 
-### AssetBundle File Naming
+### Asset Bundle File Naming
 
 The generated bundle files are named according to the pattern `{name}_{platform}_{hash}.unity3d`, where:
 
 * `{name}` is the bundle name, as defined in the Unity project.
-* `{platform}` is the target platform string, matching the variant names for `AssetBundleTarget` (see [Platform Support](#platform-support) below).
+* `{platform}` is the target platform string, matching the normalized variant names for `RuntimePlatform` (see [Platform Support](#platform-support) below).
 * `{hash}` is the asset hash of the built bundle, determined when the bundle is built.
 
 This naming conventions serves a number of purposes:
@@ -125,13 +125,15 @@ This naming conventions serves a number of purposes:
 
 ### Platform Support
 
-Unity uses the `BuildTarget` enum when building asset bundles and the `RuntimePlatform` enum to specify the current platform at runtime. Unfortunately, neither of these accurately reflects the set of platform-specific asset bundles that need to be built.  To address this, asset-bundle-builder defines the `AssetBundleTarget` enum identify the set of platforms that must have their own asset bundles.
+Unity uses the `BuildTarget` enum when building asset bundles and the `RuntimePlatform` enum to specify the current platform at runtime. Unfortunately, neither of these accurately reflects the set of platform-specific asset bundles that need to be built.  To address this, asset-bundle-builder uses a normalized subset of the variants of `RuntimePlatform` to identify the target platform for built asset bundles.
 
-For most platforms with multiple target architectures, bundles are only built once for all architectures. The platform name used is always the base platform name without an architecture-specific suffix (e.g. "StandaloneWindows" is used for both the `StandaloneWindows` and `StandaloneWindows64` build targets). The exception to this is Windows Store Applications, which do require architecture-specific assets.
+Specifically, the "Editor" variants for Windows, OSX, and Linux are normalized to the corresponding platform player variants. This is because the editor uses asset bundles for the corresponding platform's player, e.g. `WindowsEditor` will load bundles for `WindowsPlayer`.
 
-> NOTE: Not all platforms have been added to the `AssetBundleTarget` enum, and there are some outstanding questions that need to be answered in order to determine what constitutes a distinct "platform" for the purpose of building/loading asset bundles. See [this thread on the Unity forums](https://forum.unity.com/threads/do-macos-and-windows-need-different-asset-bundles.670510/) to follow the discussion.
+Additionally, obsolete platforms are not supported.
 
-### Hosting AssetBundles
+> NOTE: Not all platforms are currently supported, and there are some outstanding questions that need to be answered in order to properly handle asset bundles on all platforms. See [this thread on the Unity forums](https://forum.unity.com/threads/do-macos-and-windows-need-different-asset-bundles.670510/) to follow the discussion.
+
+### Hosting Asset Bundles
 
 Built bundles are expected to be hosted in a single folder on a remote server or CDN. This includes both the live version of any given bundle as well as any unpublished versions still in development. At any given time, the full set of asset bundles generated from the project can be uploaded to your hosting server without risking existing bundles being overwritten or broken.
 
@@ -176,10 +178,7 @@ Written out to JSON using the provided Json.NET conversion it would looks like t
 
 #### Differences From `AssetBundleManifest`
 
-Unity already provides the `AssetBundleManifest` asset to determine the hash and dependencies for each bundle, so why provide a separate system for providing that data at runtime? There are two primary reasons for this:
-
-* `AssetBundleManifest` always contains the full set of asset bundles as contained in your Unity project when you build your bundles. This means that you can't choose when individual bundles are deployed: If you push the latest bundle manifest, all of your asset bundles are now live. Using a less opaque data format like JSON allows you to maintain a separate list of live bundles and manually choose when to move each bundle into production. Keeping information for all platforms in one file, rather than having a separate file per platform, further eases this process.
-* The format is more extensible, since you can create a subclass of `AssetBundleDescription` and add custom data. The `JsonTests.cs` script contains an example of how to do this.
+Unity already provides the `AssetBundleManifest` asset to determine the hash and dependencies for each bundle, so why provide a separate system for providing that data at runtime? The primary reason for this is that `AssetBundleManifest` always contains the full set of asset bundles as contained in your Unity project when you build your bundles. This means that you can't choose when individual bundles are deployed: If you push the latest bundle manifest, all of your asset bundles are now live. Using a less opaque data format like JSON allows you to maintain a separate list of live bundles and manually choose when to move each bundle into production. Keeping information for all platforms in one file, rather than having a separate file per platform, further eases this process.
 
 ### Compatibility with Addressables
 
