@@ -1,17 +1,16 @@
 {
-    "name": "Unity.AssetBundleBuilder.Editor",
+    "name": "Synapse.AssetBundleBuilder.Runtime.Json",
     "references": [
-        "Unity.EditorCoroutines.Editor",
-        "Unity.AssetBundleBuilder.Runtime"
+        "Synapse.AssetBundleBuilder.Runtime"
     ],
     "optionalUnityReferences": [],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [
+        "JSON_NET"
+    ]
 }

@@ -1,7 +1,8 @@
 {
-    "name": "Unity.AssetBundleBuilder.Tests.Editor",
+    "name": "Synapse.AssetBundleBuilder.Tests.Editor",
     "references": [
-        "Unity.AssetBundleBuilder.Runtime"
+        "Synapse.AssetBundleBuilder.Runtime",
+        "Synapse.AssetBundleBuilder.Runtime.Json"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
@@ -14,5 +15,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,
-    "defineConstraints": []
+    "defineConstraints": [
+        "JSON_NET"
+    ]
 }

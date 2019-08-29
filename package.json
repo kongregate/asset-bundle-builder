@@ -10,7 +10,6 @@
     "url": "https://randompoison.github.io"
   },
   "dependencies": {
-    "com.unity.editorcoroutines": "0.0.2-preview.1",
-    "jillejr.newtonsoft.json-for-unity": "12.0.1-patch-001"
+    "com.unity.editorcoroutines": "0.0.2-preview.1"
   }
 }

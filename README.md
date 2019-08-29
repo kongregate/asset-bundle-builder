@@ -65,11 +65,15 @@ AssetBundles/
     └── <asset bundles that haven't been uploaded yet>
 ```
 
-### Generating the Bundle Description JSON
+### Generating the Bundle Descriptions
 
-To generate the list of asset bundle descriptions used on the platform server, call `AssetBundleBuilder.GenerateBundleDescriptions()`. This will return a list of `AssetBundleDescription` objects which contain the bundle name and platform-specific asset hashes for each platform. This information needs to then be exported in some format that can be used by your game's server to tell your game's client which asset bundles to download.
+To generate the list of asset bundle descriptions used on the platform server, call `AssetBundleBuilder.GenerateBundleDescriptions()`. This will return a list of `AssetBundleDescription` objects which contain the information needed to load each bundle at runtime. This information needs to then be exported in some format that can be used by your game's server to tell your game's client which asset bundles to download.
 
-While this package doesn't enforce any specific format for this data, it does provide support for using Json.NET to serialize the bundle descriptions to a JSON file. Note that you'll need to use the `Hash128Converter` when doing this serialization in order to correctly serialize/deserialize Unity's `Hash128` type:
+While this package doesn't enforce any specific format for this data, it does provide support for using Json.NET to serialize the bundle descriptions to a JSON file. To set this up, you'll need to do the following:
+
+* Add the [jillejr.newtonsoft.json-for-unity](https://www.npmjs.com/package/jillejr.newtonsoft.json-for-unity) package to your project.
+* Add a `JSON_NET` definition to your project's [custom scripts defines](https://docs.unity3d.com/Manual/PlatformDependentCompilation.html) in order to enable the Json.NET compatibility features in asset-bundle-builder.
+* Register the `AssetBundleDescriptionConverter` class when performing serialization/deserialization:
 
 ```c#
 var descriptions = AssetBundleBuilder
@@ -78,12 +82,14 @@ var descriptions = AssetBundleBuilder
 var bundleJson = JsonConvert.SerializeObject(
 	descriptions,
 	Formatting.Indented,
-	new Hash128Converter());
+	new AssetBundleDescriptionConverter());
 
 File.WriteAllText(
     Path.Combine(AssetBundleBuilder.BundleOutputPath, "assetbundles.json"),
     bundleJson);
 ```
+
+If not using JSON encoding (or not using Json.NET for the encoding), you will need to implement serialization for `AssetBundleDescription` using whatever system is appropriate for your game.
 
 ### Preparing Embedded Bundles
 
@@ -145,7 +151,7 @@ This is the information needed at runtime to determine which bundles your game's
 
 #### JSON Conversion
 
-Written out to JSON it would looks like this:
+Written out to JSON using the provided Json.NET conversion it would looks like this:
 
 ```json
 [

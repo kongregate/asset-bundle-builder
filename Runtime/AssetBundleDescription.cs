@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace SynapseGames.AssetBundle
@@ -18,32 +17,33 @@ namespace SynapseGames.AssetBundle
     /// bundle for any supported platform. The values are generated at build time using
     /// <see cref="AssetBundleBuilder"/>
     /// </remarks>
-    public class AssetBundleDescription : IEquatable<AssetBundleDescription>
+    public struct AssetBundleDescription : IEquatable<AssetBundleDescription>
     {
-        [JsonProperty("hashes")]
-        private Dictionary<AssetBundleTarget, Hash128> _hashes = new Dictionary<AssetBundleTarget, Hash128>();
+        private Dictionary<AssetBundleTarget, Hash128> _hashes;
+        private HashSet<string> _dependencies;
 
         /// <summary>
         /// The name of the asset bundle, as specified in the Unity editor.
         /// </summary>
-        [JsonProperty("name")]
         public string Name { get; }
 
-        [JsonProperty("dependencies")]
-        public HashSet<string> Dependencies { get; }
+        /// <summary>
+        /// The set of supported platforms and their corresponding asset hashes.
+        /// </summary>
+        public IReadOnlyDictionary<AssetBundleTarget, Hash128> Hashes => _hashes;
+
+        public IReadOnlyCollection<string> Dependencies => _dependencies;
 
         /// <summary>
         /// The file name for the current platform, if any. Will be null if there is no
         /// hash for the current platform.
         /// </summary>
-        [JsonIgnore]
         public string FileNameForCurrentTarget => GetFileNameForTarget(CurrentTarget);
 
         /// <summary>
         /// The asset hash for the current platform, if any. Will be null if there is
         /// no hash for the current platform.
         /// </summary>
-        [JsonIgnore]
         public Hash128? HashForCurrentTarget => GetHashForTarget(CurrentTarget);
 
         /// <summary>
@@ -56,7 +56,6 @@ namespace SynapseGames.AssetBundle
         /// that the bundle is actually embedded in the player, it only provides the
         /// path where the file would be stored if it were embedded.
         /// </remarks>
-        [JsonIgnore]
         public string EmbeddedPath => Path.Combine(
             Application.streamingAssetsPath,
             "EmbeddedAssetBundles",
@@ -70,7 +69,6 @@ namespace SynapseGames.AssetBundle
         /// <remarks>
         /// Used with <see cref="UnityEngine.Networking.UnityWebRequestAssetBundle.GetAssetBundle"/>.
         /// </remarks>
-        [JsonIgnore]
         public CachedAssetBundle? CachedAssetBundleForCurrentTarget => GetCachedAssetBundleForTarget(CurrentTarget);
 
         /// <summary>
@@ -86,23 +84,22 @@ namespace SynapseGames.AssetBundle
         /// platforms will be considered supported, such that the bundle cannot be
         /// loaded on any platforms not specified.
         /// </param>
-        [JsonConstructor]
         public AssetBundleDescription(
             string name,
             Dictionary<AssetBundleTarget, Hash128> hashes,
             HashSet<string> dependencies)
         {
             Name = name;
-            Dependencies = dependencies;
+            _dependencies = dependencies;
             _hashes = hashes;
         }
 
         /// <summary>
         /// Initializes a new <see cref="AssetBundleDescription"/>, copying the name
-        /// and hases from <paramref name="other"/>.
+        /// and hashes from <paramref name="other"/>.
         /// </summary>
         public AssetBundleDescription(AssetBundleDescription other)
-            : this(other.Name, other._hashes, other.Dependencies)
+            : this(other.Name, other._hashes, other._dependencies)
         {
         }
 
@@ -116,7 +113,7 @@ namespace SynapseGames.AssetBundle
         /// </returns>
         public string GetFileNameForTarget(AssetBundleTarget target)
         {
-            if (_hashes.TryGetValue(target, out var hash))
+            if (Hashes.TryGetValue(target, out var hash))
             {
                 return $"{Name}_{target}_{hash}";
             }
@@ -134,7 +131,7 @@ namespace SynapseGames.AssetBundle
         /// </returns>
         public Hash128? GetHashForTarget(AssetBundleTarget target)
         {
-            if (_hashes.TryGetValue(target, out var hash))
+            if (Hashes.TryGetValue(target, out var hash))
             {
                 return hash;
             }
@@ -152,7 +149,7 @@ namespace SynapseGames.AssetBundle
         /// </remarks>
         public CachedAssetBundle? GetCachedAssetBundleForTarget(AssetBundleTarget target)
         {
-            if (_hashes.TryGetValue(target, out var hash))
+            if (Hashes.TryGetValue(target, out var hash))
             {
                 return new CachedAssetBundle(Name, hash);
             }
@@ -162,9 +159,8 @@ namespace SynapseGames.AssetBundle
 
         public override string ToString()
         {
-            // TODO: There's probably a better way of converting this to a string than
-            // just serializing it to JSON.
-            return JsonConvert.SerializeObject(this, new Hash128Converter());
+            // TODO: Include more information in the string representation of the bundle.
+            return $"{{ Name = {Name} }}";
         }
 
         public override bool Equals(object obj)
@@ -186,7 +182,7 @@ namespace SynapseGames.AssetBundle
             foreach (var variant in variants)
             {
                 Hash128 platformHash;
-                if (_hashes.TryGetValue(variant, out platformHash))
+                if (Hashes.TryGetValue(variant, out platformHash))
                 {
                     hash = (hash, variant, platformHash).GetHashCode();
                 }
@@ -202,26 +198,26 @@ namespace SynapseGames.AssetBundle
                 return false;
             }
 
-            if (_hashes == other._hashes)
+            if (Hashes == other.Hashes)
             {
                 return true;
             }
 
-            if (_hashes.Count != other._hashes.Count)
+            if (Hashes.Count != other.Hashes.Count)
             {
                 return false;
             }
 
-            foreach (var pair in _hashes)
+            foreach (var pair in Hashes)
             {
-                if (!other._hashes.TryGetValue(pair.Key, out var otherHash)
+                if (!other.Hashes.TryGetValue(pair.Key, out var otherHash)
                     || otherHash != pair.Value)
                 {
                     return false;
                 }
             }
 
-            return Dependencies.SetEquals(other.Dependencies);
+            return _dependencies.SetEquals(other.Dependencies);
         }
 
         /// <summary>

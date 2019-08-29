@@ -355,7 +355,7 @@ namespace SynapseGames.AssetBundle
                     if (!descriptions.TryGetValue(bundleName, out var description))
                     {
                         // The first time we create the list of description objects,
-                        // popuplate the set of dependencies.
+                        // populate the set of dependencies.
                         var dependencies = new HashSet<string>(
                             manifest.GetDirectDependencies(bundleName));
 

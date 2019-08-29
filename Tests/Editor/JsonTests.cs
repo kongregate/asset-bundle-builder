@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using SynapseGames.AssetBundle;
+using SynapseGames.AssetBundle.Json;
 using UnityEngine;
 
 public class JsonTests
@@ -33,16 +34,18 @@ public class JsonTests
     ]";
 
     public static readonly string SampleJsonExtended = @"{
-      ""name"": ""bundle-1"",
       ""metadata"": ""Some cool stuff over here"",
-      ""hashes"": {
-        ""Android"": ""982415458cdaf4e60c420f75fe6c8e8b"",
-        ""iOS"": ""bd7a32acc8931e77eb1174baff409f21"",
-        ""StandaloneWindows"": ""5425682f11f1eeb1b0ac7e4580cd2237"",
-        ""StandaloneOSX"": ""4a8250d93de151328fe1651096ec8bc1"",
-        ""WebGL"": ""bc341e351d4813630d417d33558a51ed""
-      },
-      ""dependencies"": []
+      ""bundle"": {
+        ""name"": ""bundle-1"",
+        ""hashes"": {
+          ""Android"": ""982415458cdaf4e60c420f75fe6c8e8b"",
+          ""iOS"": ""bd7a32acc8931e77eb1174baff409f21"",
+          ""StandaloneWindows"": ""5425682f11f1eeb1b0ac7e4580cd2237"",
+          ""StandaloneOSX"": ""4a8250d93de151328fe1651096ec8bc1"",
+          ""WebGL"": ""bc341e351d4813630d417d33558a51ed""
+        },
+        ""dependencies"": []
+      }
     }";
 
     public static readonly AssetBundleDescription[] SampleDescriptions = new AssetBundleDescription[]
@@ -75,7 +78,7 @@ public class JsonTests
     [Test]
     public void TestSerialize()
     {
-        var json = JsonConvert.SerializeObject(SampleDescriptions, new Hash128Converter());
+        var json = JsonConvert.SerializeObject(SampleDescriptions, new AssetBundleDescriptionConverter());
 
         var data = JsonConvert.DeserializeObject<JObject[]>(json);
         var bundle1Name = (string)data[0]["name"];
@@ -90,38 +93,34 @@ public class JsonTests
     [Test]
     public void TestDeserialize()
     {
-        var descriptions = JsonConvert.DeserializeObject<AssetBundleDescription[]>(SampleJson, new Hash128Converter());
+        var descriptions = JsonConvert.DeserializeObject<AssetBundleDescription[]>(SampleJson, new AssetBundleDescriptionConverter());
         Assert.AreEqual(descriptions, SampleDescriptions);
     }
 
     [Test]
     public void TestRoundTrip()
     {
-        var json = JsonConvert.SerializeObject(SampleDescriptions, new Hash128Converter());
-        var descriptions = JsonConvert.DeserializeObject<AssetBundleDescription[]>(json, new Hash128Converter());
+        var json = JsonConvert.SerializeObject(SampleDescriptions, new AssetBundleDescriptionConverter());
+        var descriptions = JsonConvert.DeserializeObject<AssetBundleDescription[]>(json, new AssetBundleDescriptionConverter());
         Assert.AreEqual(descriptions, SampleDescriptions);
     }
 
     [Test]
     public void TestDeserializeExtended()
     {
-        var descrption = JsonConvert.DeserializeObject<ExtendedBundleDescription>(SampleJsonExtended, new Hash128Converter());
+        var description = JsonConvert.DeserializeObject<ExtendedBundleDescription>(SampleJsonExtended, new AssetBundleDescriptionConverter());
 
-        Assert.AreEqual("bundle-1", descrption.Name);
-        Assert.AreEqual("Some cool stuff over here", descrption.CustomData);
-        Assert.AreEqual(Hash128.Parse("982415458cdaf4e60c420f75fe6c8e8b"), descrption.GetHashForTarget(AssetBundleTarget.Android));
+        Assert.AreEqual("bundle-1", description.Bundle.Name);
+        Assert.AreEqual("Some cool stuff over here", description.CustomData);
+        Assert.AreEqual(Hash128.Parse("982415458cdaf4e60c420f75fe6c8e8b"), description.Bundle.GetHashForTarget(AssetBundleTarget.Android));
     }
 }
 
-public class ExtendedBundleDescription : AssetBundleDescription
+public struct ExtendedBundleDescription
 {
+    [JsonProperty("bundle")]
+    public AssetBundleDescription Bundle;
+
     [JsonProperty("metadata")]
     public string CustomData;
-
-    [JsonConstructor]
-    public ExtendedBundleDescription(string name, Dictionary<AssetBundleTarget, Hash128> hashes, HashSet<string> dependencies, string metadata)
-        : base(name, hashes, dependencies)
-    {
-        CustomData = metadata;
-    }
 }
