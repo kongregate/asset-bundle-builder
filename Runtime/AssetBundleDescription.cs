@@ -38,13 +38,13 @@ namespace SynapseGames.AssetBundle
         /// The file name for the current platform, if any. Will be null if there is no
         /// hash for the current platform.
         /// </summary>
-        public string FileNameForCurrentTarget => GetFileNameForPlatform(NormalizedPlatform);
+        public string FileName => GetFileNameForPlatform(NormalizedPlatform);
 
         /// <summary>
         /// The asset hash for the current platform, if any. Will be null if there is
         /// no hash for the current platform.
         /// </summary>
-        public Hash128? HashForCurrentTarget => GetHashForPlatform(NormalizedPlatform);
+        public Hash128? Hash => GetHashForPlatform(NormalizedPlatform);
 
         /// <summary>
         /// The path to the asset bundle when it is distributed as an embedded bundle.
