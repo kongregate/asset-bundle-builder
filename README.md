@@ -98,7 +98,7 @@ This section more thoroughly explains the specifics of how asset-bundle-builder 
 The generated bundle files are named according to the pattern `{name}_{platform}_{hash}.unity3d`, where:
 
 * `{name}` is the bundle name, as defined in the Unity project.
-* `{platform}` is the target platform string, matching the normalized variant names for `RuntimePlatform` (see [Platform Support](#platform-support) below).
+* `{platform}` is the target platform string, matching the normalized variant names for [`RuntimePlatform`](https://docs.unity3d.com/ScriptReference/RuntimePlatform.html) (see [Platform Support](#platform-support) below).
 * `{hash}` is the asset hash of the built bundle, determined when the bundle is built.
 
 This naming conventions serves a number of purposes:
@@ -109,13 +109,15 @@ This naming conventions serves a number of purposes:
 
 ### Platform Support
 
-Unity uses the `BuildTarget` enum when building asset bundles and the `RuntimePlatform` enum to specify the current platform at runtime. Unfortunately, neither of these accurately reflects the set of platform-specific asset bundles that need to be built.  To address this, asset-bundle-builder uses a normalized subset of the variants of `RuntimePlatform` to identify the target platform for built asset bundles.
+Unity uses the `BuildTarget` enum when building asset bundles and the `RuntimePlatform` enum to specify the current platform at runtime. Unfortunately, neither of these accurately reflects the set of platform-specific asset bundles that need to be built.  To address this, asset-bundle-builder uses a normalized subset of both `BuildTarget` and `RuntimePlatform` to identify the target platform for built asset bundles.
 
-Specifically, the "Editor" variants for Windows, OSX, and Linux are normalized to the corresponding platform player variants. This is because the editor uses asset bundles for the corresponding platform's player, e.g. `WindowsEditor` will load bundles for `WindowsPlayer`.
+When building asset bundles, the specified `BuildTarget` will be normalized to account for cases where Unity differentiates between build targets at build time but not runtime. Specifically, when building for Windows there are the `StandaloneWindows` and `StandaloneWindows64` targets, however both will use the `WindowsPlayer` runtime platform. As such, asset-bundle-builder will only ever use the `StandaloneWindows` target when building asset bundles.
 
-Additionally, obsolete platforms are not supported.
+At runtime, the "Editor" variants for Windows, OSX, and Linux are normalized to the corresponding platform player variants, e.g. `WindowsEditor` will load bundles for `WindowsPlayer`. This is because the editor uses asset bundles for the corresponding platform's player.
 
-> NOTE: Not all platforms are currently supported, and there are some outstanding questions that need to be answered in order to properly handle asset bundles on all platforms. See [this thread on the Unity forums](https://forum.unity.com/threads/do-macos-and-windows-need-different-asset-bundles.670510/) to follow the discussion.
+Additionally, obsolete build targets and runtime platforms are not supported.
+
+> NOTE: Not all platforms are currently supported, and there are some outstanding questions that need to be answered in order to properly handle asset bundles on all platforms. See [this thread on the Unity forums](https://forum.unity.com/threads/do-macos-and-windows-need-different-asset-bundles.670510/) for more details.
 
 ### Hosting Asset Bundles
 
