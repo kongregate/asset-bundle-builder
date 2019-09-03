@@ -164,7 +164,7 @@ Written out to JSON using the provided Json.NET conversion it would looks like t
 
 #### Differences From `AssetBundleManifest`
 
-Unity already provides the `AssetBundleManifest` asset to determine the hash and dependencies for each bundle, so why provide a separate system for providing that data at runtime? The primary reason for this is that `AssetBundleManifest` always contains the full set of asset bundles as contained in your Unity project when you build your bundles. This means that you can't choose when individual bundles are deployed: If you push the latest bundle manifest, all of your asset bundles are now live. Using a less opaque data format like JSON allows you to maintain a separate list of live bundles and manually choose when to move each bundle into production. Keeping information for all platforms in one file, rather than having a separate file per platform, further eases this process.
+Unity already provides the `AssetBundleManifest` asset to determine the hash and dependencies for each bundle, so why provide a separate system for providing that data at runtime? The primary reason for this is that `AssetBundleManifest` always represents the full set of asset bundles as contained in your Unity project when you build your bundles. This means that you can't choose when individual bundles are deployed: If you push the latest bundle manifest, all of your asset bundles are now live. Using a less opaque data format like JSON allows you to maintain a separate list of live bundles and manually choose when to move each bundle into production. Keeping information for all platforms in one file, rather than having a separate file per platform, further eases this process.
 
 ### Compatibility with Addressables
 
