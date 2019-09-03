@@ -1,0 +1,21 @@
+{
+    "name": "Synapse.AssetBundleBuilder.Tests.Editor",
+    "references": [
+        "Synapse.AssetBundleBuilder.Runtime",
+        "Synapse.AssetBundleBuilder.Runtime.Json"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "JSON_NET"
+    ]
+}

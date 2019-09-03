@@ -1,0 +1,17 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+*.cs diff=csharp text
+*.cginc text
+*.shader text
+
+# Unity-generated text assets always use Unix-style line endings.
+*.mat eol=lf
+*.anim eol=lf
+*.unity eol=lf
+*.prefab eol=lf
+*.physicsMaterial2D eol=lf
+*.physicsMaterial eol=lf
+*.asset eol=lf
+*.meta eol=lf
+*.controller eol=lf

@@ -1,0 +1,16 @@
+{
+    "name": "Synapse.AssetBundleBuilder.Runtime.Json",
+    "references": [
+        "Synapse.AssetBundleBuilder.Runtime"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "JSON_NET"
+    ]
+}
