@@ -388,7 +388,7 @@ namespace SynapseGames.AssetBundle
                     }
 
                     // Set the hash for the current build target.
-                    var bundleTarget = GetBundleTarget(target);
+                    var bundleTarget = GetPlatformForTarget(target);
                     description.hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
                 }
             }
@@ -399,9 +399,9 @@ namespace SynapseGames.AssetBundle
         }
 
         /// <summary>
-        /// Gets the corresponding <see cref="AssetBundleTarget"/> for the specified <see cref="BuildTarget"/>.
+        /// Gets the corresponding <see cref="RuntimePlatform"/> for the specified <see cref="BuildTarget"/>.
         /// </summary>
-        public static RuntimePlatform GetBundleTarget(BuildTarget target)
+        public static RuntimePlatform GetPlatformForTarget(BuildTarget target)
         {
             switch (target)
             {
@@ -438,7 +438,7 @@ namespace SynapseGames.AssetBundle
         /// </summary>
         private static string GetBuildPathForBuildTarget(BuildTarget target)
         {
-            target = NormalizeBuildTarget(target);
+            var platform = GetPlatformForTarget(NormalizeBuildTarget(target));
             return Path.Combine(RootBuildPath, target.ToString());
         }
 
@@ -500,7 +500,7 @@ namespace SynapseGames.AssetBundle
             AssetBundleManifest manifest)
         {
             var buildDirectory = GetBuildPathForBuildTarget(buildTarget);
-            var target = GetBundleTarget(buildTarget);
+            var target = GetPlatformForTarget(buildTarget);
 
             foreach (var bundle in manifest.GetAllAssetBundles())
             {
