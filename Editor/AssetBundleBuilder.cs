@@ -252,43 +252,67 @@ namespace SynapseGames.AssetBundle
         /// is considered to already be uploaded. If the response is 404 (or otherwise
         /// an error) then the bundle is considered not yet uploaded.
         /// </remarks>
-        public static EditorCoroutine PrepareBundlesForUpload(string baseUri)
+        public static void PrepareBundlesForUpload(string baseUri)
         {
-            return EditorCoroutineUtility.StartCoroutineOwnerless(
-                PrepareBundlesForUploadRoutine(baseUri));
+            // Clear out the upload area, if it already exists. This prevents a buildup
+            // of bundles over time, and ensures that after a build the upload area will
+            // only contain the latest bundles that need to be uploaded.
+            ResetDirectory(UploadArea);
 
-            IEnumerator PrepareBundlesForUploadRoutine(string _baseUri)
+            // Start all of the web requests at the same time and wait for them to complete.
+            //
+            // HACK: We have to block while waiting for the web requests to complete
+            // otherwise this function doesn't work when running Unity from the command
+            // line. When running with the -quit argument (which is necessary when doing
+            // build automation on a remote server) Unity won't wait for coroutines to
+            // complete before exiting, so the upload operations never complete.
+            //
+            // NOTE: We have to manually drive the coroutines to completion by calling
+            // the MoveNext() method on each of them until they all are done. The
+            // WaitForCoroutines() helper method handles this for us. At runtime Unity
+            // would handle this for us, but it doesn't support blocking on coroutines
+            // in the editor.
+            var bundleRoutines = Directory
+                .GetFiles(StagingArea)
+                .Select(PrepareBundle)
+                .ToArray();
+            while (WaitForCoroutines(bundleRoutines)) { }
+
+            IEnumerator PrepareBundle(string bundlePath)
             {
-                // Clear out the upload area, if it already exists. This prevents a buildup
-                // of bundles over time, and ensures that after a build the upload area will
-                // only contain the latest bundles that need to be uploaded.
-                ResetDirectory(UploadArea);
+                var fileName = Path.GetFileName(bundlePath);
+                var uri = $"{baseUri}/{fileName}";
 
-                foreach (var bundlePath in Directory.GetFiles(StagingArea))
+                // TODO: Execute network requests in parallel. This may be easier to
+                // do with async/await than with coroutines.
+                var request = UnityWebRequest.Head(uri);
+                request.SendWebRequest();
+
+                // TODO: Why do we need to manually check if the request is done
+                // here? We should be able to just yield on the request and assume
+                // it's done once we resume the coroutine. For some reason, that
+                // doesn't seem to be working in the editor.
+                while (!request.isDone)
                 {
-                    var fileName = Path.GetFileName(bundlePath);
-                    var uri = $"{_baseUri}/{fileName}";
-
-                    // TODO: Execute network requests in parallel. This may be easier to
-                    // do with async/await than with coroutines.
-                    var request = UnityWebRequest.Head(uri);
-                    yield return request.SendWebRequest();
-
-                    // TODO: Why do we need to manually check if the request is done
-                    // here? We should be able to just yield on the request and assume
-                    // it's done once we resume the coroutine. For some reason, that
-                    // doesn't seem to be working in the editor.
-                    while (!request.isDone)
-                    {
-                        yield return null;
-                    }
-
-                    if (request.isHttpError)
-                    {
-                        var destPath = Path.Combine(UploadArea, fileName);
-                        File.Copy(bundlePath, destPath, true);
-                    }
+                    yield return null;
                 }
+
+                if (request.isHttpError)
+                {
+                    var destPath = Path.Combine(UploadArea, fileName);
+                    File.Copy(bundlePath, destPath, true);
+                }
+            }
+
+            bool WaitForCoroutines(IEnumerator[] routines)
+            {
+                var workRemaining = false;
+                foreach (var routine in routines)
+                {
+                    workRemaining |= routine.MoveNext();
+                }
+
+                return workRemaining;
             }
         }
 
