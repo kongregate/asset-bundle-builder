@@ -260,23 +260,35 @@ namespace SynapseGames.AssetBundle
             ResetDirectory(UploadArea);
 
             // Start all of the web requests at the same time and wait for them to complete.
-            //
-            // HACK: We have to block while waiting for the web requests to complete
-            // otherwise this function doesn't work when running Unity from the command
-            // line. When running with the -quit argument (which is necessary when doing
-            // build automation on a remote server) Unity won't wait for coroutines to
-            // complete before exiting, so the upload operations never complete.
-            //
-            // NOTE: We have to manually drive the coroutines to completion by calling
-            // the MoveNext() method on each of them until they all are done. The
-            // WaitForCoroutines() helper method handles this for us. At runtime Unity
-            // would handle this for us, but it doesn't support blocking on coroutines
-            // in the editor.
             var bundleRoutines = Directory
                 .GetFiles(StagingArea)
                 .Select(PrepareBundle)
                 .ToArray();
-            while (WaitForCoroutines(bundleRoutines)) { }
+
+            if (Application.isBatchMode)
+            {
+                // HACK: We have to block while waiting for the web requests to complete
+                // otherwise this function doesn't work when running Unity from the command
+                // line. When running with the -quit argument (which is necessary when doing
+                // build automation on a remote server) Unity won't wait for coroutines to
+                // complete before exiting, so the upload operations never complete.
+                //
+                // NOTE: We have to manually drive the coroutines to completion by calling
+                // the MoveNext() method on each of them until they all are done. The
+                // WaitForCoroutines() helper method handles this for us. At runtime Unity
+                // would handle this for us, but it doesn't support blocking on coroutines
+                // in the editor.
+                while (WaitForCoroutines(bundleRoutines)) { }
+            }
+            else
+            {
+                // When running in the editor normally, we run the coroutines in the
+                // background to avoid blocking the main thread.
+                foreach (var coroutine in bundleRoutines)
+                {
+                    EditorCoroutineUtility.StartCoroutineOwnerless(coroutine);
+                }
+            }
 
             IEnumerator PrepareBundle(string bundlePath)
             {
@@ -288,10 +300,11 @@ namespace SynapseGames.AssetBundle
                 var request = UnityWebRequest.Head(uri);
                 request.SendWebRequest();
 
-                // TODO: Why do we need to manually check if the request is done
-                // here? We should be able to just yield on the request and assume
-                // it's done once we resume the coroutine. For some reason, that
-                // doesn't seem to be working in the editor.
+                // HACK: Manually poll the web request until it finishes. This is
+                // necessary because yielding on the request doesn't work in the editor,
+                // and so the coroutine will never resume after yielding. The web
+                // request is still being processed in the background, though, so we can
+                // manually poll the request to find out when it has finished.
                 while (!request.isDone)
                 {
                     yield return null;
