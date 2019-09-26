@@ -252,43 +252,80 @@ namespace SynapseGames.AssetBundle
         /// is considered to already be uploaded. If the response is 404 (or otherwise
         /// an error) then the bundle is considered not yet uploaded.
         /// </remarks>
-        public static EditorCoroutine PrepareBundlesForUpload(string baseUri)
+        public static void PrepareBundlesForUpload(string baseUri)
         {
-            return EditorCoroutineUtility.StartCoroutineOwnerless(
-                PrepareBundlesForUploadRoutine(baseUri));
+            // Clear out the upload area, if it already exists. This prevents a buildup
+            // of bundles over time, and ensures that after a build the upload area will
+            // only contain the latest bundles that need to be uploaded.
+            ResetDirectory(UploadArea);
 
-            IEnumerator PrepareBundlesForUploadRoutine(string _baseUri)
+            // Start all of the web requests at the same time and wait for them to complete.
+            var bundleRoutines = Directory
+                .GetFiles(StagingArea)
+                .Select(PrepareBundle)
+                .ToArray();
+
+            if (Application.isBatchMode)
             {
-                // Clear out the upload area, if it already exists. This prevents a buildup
-                // of bundles over time, and ensures that after a build the upload area will
-                // only contain the latest bundles that need to be uploaded.
-                ResetDirectory(UploadArea);
-
-                foreach (var bundlePath in Directory.GetFiles(StagingArea))
+                // HACK: We have to block while waiting for the web requests to complete
+                // otherwise this function doesn't work when running Unity from the command
+                // line. When running with the -quit argument (which is necessary when doing
+                // build automation on a remote server) Unity won't wait for coroutines to
+                // complete before exiting, so the upload operations never complete.
+                //
+                // NOTE: We have to manually drive the coroutines to completion by calling
+                // the MoveNext() method on each of them until they all are done. The
+                // WaitForCoroutines() helper method handles this for us. At runtime Unity
+                // would handle this for us, but it doesn't support blocking on coroutines
+                // in the editor.
+                while (WaitForCoroutines(bundleRoutines)) { }
+            }
+            else
+            {
+                // When running in the editor normally, we run the coroutines in the
+                // background to avoid blocking the main thread.
+                foreach (var coroutine in bundleRoutines)
                 {
-                    var fileName = Path.GetFileName(bundlePath);
-                    var uri = $"{_baseUri}/{fileName}";
-
-                    // TODO: Execute network requests in parallel. This may be easier to
-                    // do with async/await than with coroutines.
-                    var request = UnityWebRequest.Head(uri);
-                    yield return request.SendWebRequest();
-
-                    // TODO: Why do we need to manually check if the request is done
-                    // here? We should be able to just yield on the request and assume
-                    // it's done once we resume the coroutine. For some reason, that
-                    // doesn't seem to be working in the editor.
-                    while (!request.isDone)
-                    {
-                        yield return null;
-                    }
-
-                    if (request.isHttpError)
-                    {
-                        var destPath = Path.Combine(UploadArea, fileName);
-                        File.Copy(bundlePath, destPath, true);
-                    }
+                    EditorCoroutineUtility.StartCoroutineOwnerless(coroutine);
                 }
+            }
+
+            IEnumerator PrepareBundle(string bundlePath)
+            {
+                var fileName = Path.GetFileName(bundlePath);
+                var uri = $"{baseUri}/{fileName}";
+
+                // TODO: Execute network requests in parallel. This may be easier to
+                // do with async/await than with coroutines.
+                var request = UnityWebRequest.Head(uri);
+                request.SendWebRequest();
+
+                // HACK: Manually poll the web request until it finishes. This is
+                // necessary because yielding on the request doesn't work in the editor,
+                // and so the coroutine will never resume after yielding. The web
+                // request is still being processed in the background, though, so we can
+                // manually poll the request to find out when it has finished.
+                while (!request.isDone)
+                {
+                    yield return null;
+                }
+
+                if (request.isHttpError)
+                {
+                    var destPath = Path.Combine(UploadArea, fileName);
+                    File.Copy(bundlePath, destPath, true);
+                }
+            }
+
+            bool WaitForCoroutines(IEnumerator[] routines)
+            {
+                var workRemaining = false;
+                foreach (var routine in routines)
+                {
+                    workRemaining |= routine.MoveNext();
+                }
+
+                return workRemaining;
             }
         }
 
@@ -364,7 +401,7 @@ namespace SynapseGames.AssetBundle
                     }
 
                     // Set the hash for the current build target.
-                    var bundleTarget = GetBundleTarget(target);
+                    var bundleTarget = GetPlatformForTarget(target);
                     description.hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
                 }
             }
@@ -375,9 +412,9 @@ namespace SynapseGames.AssetBundle
         }
 
         /// <summary>
-        /// Gets the corresponding <see cref="AssetBundleTarget"/> for the specified <see cref="BuildTarget"/>.
+        /// Gets the corresponding <see cref="RuntimePlatform"/> for the specified <see cref="BuildTarget"/>.
         /// </summary>
-        public static RuntimePlatform GetBundleTarget(BuildTarget target)
+        public static RuntimePlatform GetPlatformForTarget(BuildTarget target)
         {
             switch (target)
             {
@@ -414,7 +451,7 @@ namespace SynapseGames.AssetBundle
         /// </summary>
         private static string GetBuildPathForBuildTarget(BuildTarget target)
         {
-            target = NormalizeBuildTarget(target);
+            var platform = GetPlatformForTarget(NormalizeBuildTarget(target));
             return Path.Combine(RootBuildPath, target.ToString());
         }
 
@@ -476,7 +513,7 @@ namespace SynapseGames.AssetBundle
             AssetBundleManifest manifest)
         {
             var buildDirectory = GetBuildPathForBuildTarget(buildTarget);
-            var target = GetBundleTarget(buildTarget);
+            var target = GetPlatformForTarget(buildTarget);
 
             foreach (var bundle in manifest.GetAllAssetBundles())
             {
