@@ -518,7 +518,10 @@ namespace SynapseGames.AssetBundle
             foreach (var bundle in manifest.GetAllAssetBundles())
             {
                 var sourceFile = Path.Combine(buildDirectory, bundle);
-                var fileName = $"{bundle}_{target}_{manifest.GetAssetBundleHash(bundle)}.unity3d";
+                var fileName = AssetBundleDescription.BuildFileName(
+                    bundle,
+                    target,
+                    manifest.GetAssetBundleHash(bundle));
 
                 File.Copy(
                     sourceFile,

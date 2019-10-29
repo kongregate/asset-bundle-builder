@@ -110,7 +110,7 @@ namespace SynapseGames.AssetBundle
             platform = NormalizePlatform(platform);
             if (Hashes.TryGetValue(platform, out var hash))
             {
-                return $"{Name}_{platform}_{hash}";
+                return BuildFileName(Name, platform, hash);
             }
 
             return null;
@@ -241,6 +241,27 @@ namespace SynapseGames.AssetBundle
                 default:
                     throw new NotImplementedException($"Cannot determine asset bundle target for unsupported platform {Application.platform}");
             }
+        }
+
+        /// <summary>
+        /// Canonical method for determining the final file name of a built asset bundle.
+        /// </summary>
+        ///
+        /// <param name="bundleName">
+        /// The name of the asset bundle, as configured in the editor.
+        /// </param>
+        /// <param name="platform">The platform the bundle was built for.</param>
+        /// <param name="hash">The hash of the built bundle.</param>
+        ///
+        /// <returns>
+        /// The full file name for the asset bundle, including file extension.
+        /// </returns>
+        public static string BuildFileName(
+            string bundleName,
+            RuntimePlatform platform,
+            Hash128 hash)
+        {
+            return $"{bundleName}_{platform}_{hash}.unity3d";
         }
 
         public static bool operator ==(AssetBundleDescription left, AssetBundleDescription right)
