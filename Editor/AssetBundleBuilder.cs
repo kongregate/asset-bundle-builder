@@ -354,36 +354,14 @@ namespace SynapseGames.AssetBundle
         /// Runs a dry-run build for the specified platforms in order to get the
         /// <see cref="AssetBundleManifest"/> for each platform.
         /// </remarks>
-        public static AssetBundleDescription[] GenerateBundleDescriptions(
-            BuildTarget[] buildTargets,
-            BuildAssetBundleOptions options = BuildAssetBundleOptions.None)
+        public static AssetBundleDescription[] MergeBundleDescriptions(
+            Dictionary<RuntimePlatform, AssetBundleManifest> platformDescriptions)
         {
-            // Normalize the list of build targets by normalizing the individual targets
-            // specified and then removing any duplicates. For example, if the user
-            // specifies both StandaloneWindows and StandaloneWindows64, we only want to
-            // generate output for StandaloneWindows once.
-            buildTargets = buildTargets
-                .Select(NormalizeBuildTarget)
-                .Distinct()
-                .ToArray();
-
             var descriptions = new Dictionary<string, (Dictionary<RuntimePlatform, Hash128> hashes, HashSet<string> dependencies)>();
-            foreach (var target in buildTargets)
+            foreach (var keyValue in platformDescriptions)
             {
-                var buildDirectory = GetBuildPathForBuildTarget(target);
-
-                // Make sure the output directory for the platform exists.
-                //
-                // NOTE: This directory won't actually be populated because we're doing
-                // a dry run, but Unity will still complain if the directory isn't present.
-                Directory.CreateDirectory(buildDirectory);
-
-                // Perform a dry run of the build in order to get the build manifest
-                // without having to wait for the build to complete on all platforms.
-                var manifest = BuildPipeline.BuildAssetBundles(
-                    buildDirectory,
-                    options | BuildAssetBundleOptions.DryRunBuild,
-                    target);
+                var platform = keyValue.Key;
+                var manifest = keyValue.Value;
 
                 foreach (var bundleName in manifest.GetAllAssetBundles())
                 {
@@ -401,8 +379,7 @@ namespace SynapseGames.AssetBundle
                     }
 
                     // Set the hash for the current build target.
-                    var bundleTarget = GetPlatformForTarget(target);
-                    description.hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
+                    description.hashes[platform] = manifest.GetAssetBundleHash(bundleName);
                 }
             }
 
