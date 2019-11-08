@@ -330,35 +330,27 @@ namespace SynapseGames.AssetBundle
         }
 
         /// <summary>
-        /// Generates the list of asset bundle descriptions for the specified platforms.
+        /// Generates the list of asset bundle descriptions from the set of
+        /// platform-specific manifests.
         /// </summary>
         ///
-        /// <param name="buildTargets">
-        /// The target platforms to generate bundle descriptions for. Should be the full
-        /// set of platforms your game supports.
-        /// </param>
-        ///
-        /// <param name="options">
-        /// Optional build parameters to use when performing the dry-run build. Should
-        /// match the build options used when building bundles.
+        /// <param name="manifests">
+        /// The set of <see cref="AssetBundleManifest"/> objects generated when
+        /// building bundles. This should include a manifest for every platform you
+        /// build bundles for in order to ensure that the generated <see cref="AssetBundleDescription"/>
+        /// objects contain correct information.
         /// </param>
         ///
         /// <returns>
         /// The bundle description for each of the bundles defined in the project. The
         /// bundle descriptions will include asset hashes for the platforms specified in
-        /// <paramref name="buildTargets"/>. Note that the final set of platforms used
-        /// will be normalized, and so may not exactly match the list specified.
+        /// <paramref name="manifests"/>.
         /// </returns>
-        ///
-        /// <remarks>
-        /// Runs a dry-run build for the specified platforms in order to get the
-        /// <see cref="AssetBundleManifest"/> for each platform.
-        /// </remarks>
-        public static AssetBundleDescription[] MergeBundleDescriptions(
-            Dictionary<RuntimePlatform, AssetBundleManifest> platformDescriptions)
+        public static AssetBundleDescription[] MergePlatformManifests(
+            Dictionary<RuntimePlatform, AssetBundleManifest> manifests)
         {
             var descriptions = new Dictionary<string, (Dictionary<RuntimePlatform, Hash128> hashes, HashSet<string> dependencies)>();
-            foreach (var keyValue in platformDescriptions)
+            foreach (var keyValue in manifests)
             {
                 var platform = keyValue.Key;
                 var manifest = keyValue.Value;
