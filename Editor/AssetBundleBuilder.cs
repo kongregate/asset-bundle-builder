@@ -421,7 +421,7 @@ namespace SynapseGames.AssetBundle
         private static string GetBuildPathForBuildTarget(BuildTarget target)
         {
             var platform = GetPlatformForTarget(NormalizeBuildTarget(target));
-            return Path.Combine(RootBuildPath, target.ToString());
+            return Path.Combine(RootBuildPath, platform.ToString());
         }
 
         /// <summary>
