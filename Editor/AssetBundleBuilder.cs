@@ -330,60 +330,91 @@ namespace SynapseGames.AssetBundle
         }
 
         /// <summary>
-        /// Generates the list of asset bundle descriptions for the specified platforms.
+        /// Generates the list of asset bundle descriptions from the set of
+        /// platform-specific manifests.
         /// </summary>
         ///
-        /// <param name="buildTargets">
-        /// The target platforms to generate bundle descriptions for. Should be the full
-        /// set of platforms your game supports.
-        /// </param>
-        ///
-        /// <param name="options">
-        /// Optional build parameters to use when performing the dry-run build. Should
-        /// match the build options used when building bundles.
+        /// <param name="paths">
+        /// The paths to each of the platforms-specific manifest bundles. This should
+        /// include a bundle for every platform you build bundles for in order to ensure
+        /// that the generated <see cref="AssetBundleDescription"/> objects contain
+        /// correct information. Paths should be either an absolute path, or a relative
+        /// path that is relative to the root folder of the Unity project.
         /// </param>
         ///
         /// <returns>
         /// The bundle description for each of the bundles defined in the project. The
         /// bundle descriptions will include asset hashes for the platforms specified in
-        /// <paramref name="buildTargets"/>. Note that the final set of platforms used
-        /// will be normalized, and so may not exactly match the list specified.
+        /// <paramref name="paths"/>.
         /// </returns>
         ///
         /// <remarks>
-        /// Runs a dry-run build for the specified platforms in order to get the
-        /// <see cref="AssetBundleManifest"/> for each platform.
+        /// This function will handle the work of loading the manifest bundle for each
+        /// specified platform, loading the manifest from the bundle, and then unloading
+        /// the bundle to avoid loading conflicts. If you already have the bundle
+        /// manifests loaded, you can instead use <see cref="MergePlatformManifests(Dictionary{RuntimePlatform, AssetBundleManifest})"/>
+        /// directly.
         /// </remarks>
-        public static AssetBundleDescription[] GenerateBundleDescriptions(
-            BuildTarget[] buildTargets,
-            BuildAssetBundleOptions options = BuildAssetBundleOptions.None)
+        public static AssetBundleDescription[] MergePlatformManifests(
+            Dictionary<RuntimePlatform, string> paths)
         {
-            // Normalize the list of build targets by normalizing the individual targets
-            // specified and then removing any duplicates. For example, if the user
-            // specifies both StandaloneWindows and StandaloneWindows64, we only want to
-            // generate output for StandaloneWindows once.
-            buildTargets = buildTargets
-                .Select(NormalizeBuildTarget)
-                .Distinct()
-                .ToArray();
+            var manifests = paths
+                .Select(pair => (pair.Key, Value: ExtractManifest(pair.Value)))
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+            return MergePlatformManifests(manifests);
 
-            var descriptions = new Dictionary<string, (Dictionary<RuntimePlatform, Hash128> hashes, HashSet<string> dependencies)>();
-            foreach (var target in buildTargets)
+            AssetBundleManifest ExtractManifest(string path)
             {
-                var buildDirectory = GetBuildPathForBuildTarget(target);
+                // Load the bundle from the file, skipping any files in the directory
+                // that aren't valid asset bundles.
+                var bundle = UnityEngine.AssetBundle.LoadFromFile(path);
+                if (bundle == null)
+                {
+                    throw new ArgumentException($"No bundle loaded from {path}");
+                }
 
-                // Make sure the output directory for the platform exists.
-                //
-                // NOTE: This directory won't actually be populated because we're doing
-                // a dry run, but Unity will still complain if the directory isn't present.
-                Directory.CreateDirectory(buildDirectory);
+                // Load the manifest from the bundle.
+                var manifest = bundle.LoadAsset<AssetBundleManifest>("assetbundlemanifest");
+                if (manifest == null)
+                {
+                    throw new ArgumentException($"Failed to load AssetBundleManifest from bundle at path {path}");
+                }
 
-                // Perform a dry run of the build in order to get the build manifest
-                // without having to wait for the build to complete on all platforms.
-                var manifest = BuildPipeline.BuildAssetBundles(
-                    buildDirectory,
-                    options | BuildAssetBundleOptions.DryRunBuild,
-                    target);
+                // Unload the bundle immediately without unloading the manifest that was
+                // loaded from it. This prevents issues with trying to load the same
+                // bundle multiple times, which can mostly come up when testing the
+                // bundle build process locally.
+                bundle.Unload(false);
+
+                return manifest;
+            }
+        }
+
+        /// <summary>
+        /// Generates the list of asset bundle descriptions from the set of
+        /// platform-specific manifests.
+        /// </summary>
+        ///
+        /// <param name="manifests">
+        /// The set of <see cref="AssetBundleManifest"/> objects generated when
+        /// building bundles. This should include a manifest for every platform you
+        /// build bundles for in order to ensure that the generated <see cref="AssetBundleDescription"/>
+        /// objects contain correct information.
+        /// </param>
+        ///
+        /// <returns>
+        /// The bundle description for each of the bundles defined in the project. The
+        /// bundle descriptions will include asset hashes for the platforms specified in
+        /// <paramref name="manifests"/>.
+        /// </returns>
+        public static AssetBundleDescription[] MergePlatformManifests(
+            Dictionary<RuntimePlatform, AssetBundleManifest> manifests)
+        {
+            var descriptions = new Dictionary<string, (Dictionary<RuntimePlatform, Hash128> hashes, HashSet<string> dependencies)>();
+            foreach (var keyValue in manifests)
+            {
+                var platform = keyValue.Key;
+                var manifest = keyValue.Value;
 
                 foreach (var bundleName in manifest.GetAllAssetBundles())
                 {
@@ -401,8 +432,7 @@ namespace SynapseGames.AssetBundle
                     }
 
                     // Set the hash for the current build target.
-                    var bundleTarget = GetPlatformForTarget(target);
-                    description.hashes[bundleTarget] = manifest.GetAssetBundleHash(bundleName);
+                    description.hashes[platform] = manifest.GetAssetBundleHash(bundleName);
                 }
             }
 
@@ -452,7 +482,7 @@ namespace SynapseGames.AssetBundle
         private static string GetBuildPathForBuildTarget(BuildTarget target)
         {
             var platform = GetPlatformForTarget(NormalizeBuildTarget(target));
-            return Path.Combine(RootBuildPath, target.ToString());
+            return Path.Combine(RootBuildPath, platform.ToString());
         }
 
         /// <summary>

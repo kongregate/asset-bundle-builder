@@ -1,9 +1,9 @@
 {
   "name": "com.synapse-games.asset-bundle-builder",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Asset Bundle Builder",
   "description": "A system for automatically building, managing, and publishing asset bundles.",
-  "unity": "2018.3",
+  "unity": "2018.4",
   "author": {
     "name": "David LeGare",
     "email": "dlegare.1001@gmail.com",
