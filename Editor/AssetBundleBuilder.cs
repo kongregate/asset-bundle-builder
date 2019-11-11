@@ -334,6 +334,67 @@ namespace SynapseGames.AssetBundle
         /// platform-specific manifests.
         /// </summary>
         ///
+        /// <param name="paths">
+        /// The paths to each of the platforms-specific manifest bundles. This should
+        /// include a bundle for every platform you build bundles for in order to ensure
+        /// that the generated <see cref="AssetBundleDescription"/> objects contain
+        /// correct information. Paths should be either an absolute path, or a relative
+        /// path that is relative to the root folder of the Unity project.
+        /// </param>
+        ///
+        /// <returns>
+        /// The bundle description for each of the bundles defined in the project. The
+        /// bundle descriptions will include asset hashes for the platforms specified in
+        /// <paramref name="paths"/>.
+        /// </returns>
+        ///
+        /// <remarks>
+        /// This function will handle the work of loading the manifest bundle for each
+        /// specified platform, loading the manifest from the bundle, and then unloading
+        /// the bundle to avoid loading conflicts. If you already have the bundle
+        /// manifests loaded, you can instead use <see cref="MergePlatformManifests(Dictionary{RuntimePlatform, AssetBundleManifest})"/>
+        /// directly.
+        /// </remarks>
+        public static AssetBundleDescription[] MergePlatformManifests(
+            Dictionary<RuntimePlatform, string> paths)
+        {
+            var manifests = paths
+                .Select(pair => (pair.Key, Value: ExtractManifest(pair.Value)))
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+            return MergePlatformManifests(manifests);
+
+            AssetBundleManifest ExtractManifest(string path)
+            {
+                // Load the bundle from the file, skipping any files in the directory
+                // that aren't valid asset bundles.
+                var bundle = UnityEngine.AssetBundle.LoadFromFile(path);
+                if (bundle == null)
+                {
+                    throw new ArgumentException($"No bundle loaded from {path}");
+                }
+
+                // Load the manifest from the bundle.
+                var manifest = bundle.LoadAsset<AssetBundleManifest>("assetbundlemanifest");
+                if (manifest == null)
+                {
+                    throw new ArgumentException($"Failed to load AssetBundleManifest from bundle at path {path}");
+                }
+
+                // Unload the bundle immediately without unloading the manifest that was
+                // loaded from it. This prevents issues with trying to load the same
+                // bundle multiple times, which can mostly come up when testing the
+                // bundle build process locally.
+                bundle.Unload(false);
+
+                return manifest;
+            }
+        }
+
+        /// <summary>
+        /// Generates the list of asset bundle descriptions from the set of
+        /// platform-specific manifests.
+        /// </summary>
+        ///
         /// <param name="manifests">
         /// The set of <see cref="AssetBundleManifest"/> objects generated when
         /// building bundles. This should include a manifest for every platform you
