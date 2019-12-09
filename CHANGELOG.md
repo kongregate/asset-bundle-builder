@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.1]
+
 ### Added
 
 * `ManifestBundlePath`, `CurrentBuildPlatform`, and `GetManifestBundlePathForTarget()`. ([#6])
@@ -33,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release :tada: Provides basic workflow for building, distributing, and loading asset bundles.
 
-[Unreleased]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.0...master
+[Unreleased]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.1...master
+[v02.1]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/kongregate/asset-bundle-builder/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/kongregate/asset-bundle-builder/compare/56f87b9...v0.1.0
