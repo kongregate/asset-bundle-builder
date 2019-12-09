@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* `ManifestBundlePath`, `CurrentBuildPlatform`, and `GetManifestBundlePathForTarget()`. ([#6])
+
+[#6]: https://github.com/kongregate/asset-bundle-builder/pull/6
+
 ## [v0.2.0]
 
 ### Added
