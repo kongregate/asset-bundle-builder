@@ -238,8 +238,7 @@ namespace SynapseGames.AssetBundle
                 case RuntimePlatform.LinuxPlayer:
                     return RuntimePlatform.LinuxPlayer;
 
-                default:
-                    throw new NotImplementedException($"Cannot determine asset bundle target for unsupported platform {Application.platform}");
+                default: return platform;
             }
         }
 

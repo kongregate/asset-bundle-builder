@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+* `NormalizePlatform()` no longer throws an exception for "unsupported" platforms. ([#7])
+
+[#7]: https://github.com/kongregate/asset-bundle-builder/pull/7
+
 ## [v0.2.1]
 
 ### Added
