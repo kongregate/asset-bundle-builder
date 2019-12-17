@@ -20,7 +20,7 @@ To include asset-bundle-builder as a Unity package, you'll need to be on Unity 2
 ```json
 {
   "dependencies": {
-    "com.synapse-games.asset-bundle-builder": "https://github.com/kongregate/asset-bundle-builder.git#v0.2.1"
+    "com.synapse-games.asset-bundle-builder": "https://github.com/kongregate/asset-bundle-builder.git#v0.2.2"
   }
 }
 ```
