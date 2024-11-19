@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.3]
+
+### Fixed
+
+* Updated `isHttpError` and Linux `BuildTargets` to recommended uses in 2024
+
+### Added
+
+* `PrepareBundlesForUpload()` can now use a short delay between requests
+* Simple retry system for requests in `PrepareBundlesForUpload()`. This allows differentiating between cases where the server could not be reached
+and where the bundle is not uploaded, throwing an exception in the former case, which helps resolve that ambiguity. Previously, if the server was unresponsive
+the asset bundle would be marked for upload but the actual upload would fail.
+* `PrepareBundlesForUpload()` logging
+
 ## [v0.2.2]
 
 ### Fixed
@@ -43,7 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release :tada: Provides basic workflow for building, distributing, and loading asset bundles.
 
-[Unreleased]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.2...master
+[Unreleased]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.3...master
+[v0.2.3]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.2...v0.2.3
 [v0.2.2]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/kongregate/asset-bundle-builder/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/kongregate/asset-bundle-builder/compare/v0.1.0...v0.2.0

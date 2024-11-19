@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -250,6 +251,31 @@ namespace SynapseGames.AssetBundle
             }
         }
 
+        public static bool CheckForMissingBundles(BuildTarget[] targets, out string error)
+        {
+            StringBuilder log = new();
+            var filesInStaging = Directory.GetFiles(StagingArea);
+            var assetBundles = AssetDatabase.GetAllAssetBundleNames();
+
+            foreach (var bundle in assetBundles)
+            {
+                foreach (var target in targets)
+                {
+                    var platform = GetPlatformForTarget(target);
+                    var prefix = $"{bundle}_{platform}_";
+                    if (!filesInStaging.Any(f => Path.GetFileName(f).StartsWith(prefix))) {
+                        log.AppendLine($"Missing {platform} for {bundle}");
+                    }
+                }
+            }
+
+            error = log.ToString();
+            return string.IsNullOrEmpty(error);
+        }
+
+        private const int PREPARE_FOR_UPLOAD_MAX_RETRIES = 5;
+        private const float PREPARE_FOR_UPLOAD_DELAY = 0.1f;
+
         /// <summary>
         /// Checks to see which asset bundles are already hosted, and copies any
         /// new/updated bundles to a separate folder for easy upload.
@@ -258,6 +284,17 @@ namespace SynapseGames.AssetBundle
         /// <param name="baseUri">
         /// The address of the public server to check for the bundles. Server must be
         /// public (i.e. not require any authentication) and must accept HEAD requests.
+        /// </param>
+        ///
+        /// <param name="addDelay">
+        /// Add a short delay between HEAD requests in case the CDN can't handle
+        /// so many successive requests.
+        /// </param>
+        ///
+        /// <param name="useRetries">
+        /// Retry the HEAD requests up to 5 times to confirm the bundle is not uploaded
+        /// rather than the CDN could not be reached. If the retry count exceeds 5 for
+        /// any bundle, <see cref="PrepareBundlesForUpload"/> will throw an <see cref="Exception"/>
         /// </param>
         ///
         /// <returns>
@@ -272,7 +309,7 @@ namespace SynapseGames.AssetBundle
         /// is considered to already be uploaded. If the response is 404 (or otherwise
         /// an error) then the bundle is considered not yet uploaded.
         /// </remarks>
-        public static void PrepareBundlesForUpload(string baseUri)
+        public static void PrepareBundlesForUpload(string baseUri, bool addDelay = false, bool useRetries = true)
         {
             // Clear out the upload area, if it already exists. This prevents a buildup
             // of bundles over time, and ensures that after a build the upload area will
@@ -314,26 +351,51 @@ namespace SynapseGames.AssetBundle
             {
                 var fileName = Path.GetFileName(bundlePath);
                 var uri = $"{baseUri}/{fileName}";
+                var retries = 0;
 
-                // TODO: Execute network requests in parallel. This may be easier to
-                // do with async/await than with coroutines.
-                var request = UnityWebRequest.Head(uri);
-                request.SendWebRequest();
+                do {
+                    // Short wait between requests to avoid overloading the CDN
+                    if (addDelay) yield return new WaitForSeconds(PREPARE_FOR_UPLOAD_DELAY);
 
-                // HACK: Manually poll the web request until it finishes. This is
-                // necessary because yielding on the request doesn't work in the editor,
-                // and so the coroutine will never resume after yielding. The web
-                // request is still being processed in the background, though, so we can
-                // manually poll the request to find out when it has finished.
-                while (!request.isDone)
-                {
-                    yield return null;
-                }
+                    // TODO: Execute network requests in parallel. This may be easier to
+                    // do with async/await than with coroutines.
+                    Debug.Log($"Checking if bundle is already uploaded: {uri}");
+                    var request = UnityWebRequest.Head(uri);
+                    request.SendWebRequest();
 
-                if (request.isHttpError)
-                {
-                    var destPath = Path.Combine(UploadArea, fileName);
-                    File.Copy(bundlePath, destPath, true);
+                    // HACK: Manually poll the web request until it finishes. This is
+                    // necessary because yielding on the request doesn't work in the editor,
+                    // and so the coroutine will never resume after yielding. The web
+                    // request is still being processed in the background, though, so we can
+                    // manually poll the request to find out when it has finished.
+                    while (!request.isDone)
+                    {
+                        yield return null;
+                    }
+
+                    // Could not connect to server, try again
+                    if (request.result == UnityWebRequest.Result.ConnectionError)
+                    {
+                        retries++;
+                        continue;
+                    }
+                    
+                    // Not found, which means it's not uploaded yet
+                    if (request.result == UnityWebRequest.Result.ProtocolError || request.result == UnityWebRequest.Result.DataProcessingError)
+                    {
+                        var destPath = Path.Combine(UploadArea, fileName);
+                        File.Copy(bundlePath, destPath, true);
+                    }
+                    break;
+                } while (useRetries && retries < PREPARE_FOR_UPLOAD_MAX_RETRIES);
+
+                if (useRetries) {
+                    // Don't allow the ambiguous case where a bundle wasn't marked for upload because the CDN could not be reached
+                    if (retries == PREPARE_FOR_UPLOAD_MAX_RETRIES) {
+                        throw new Exception($"Could not connect to server while checking {uri}");
+                    } else if (retries > 0) {
+                        Debug.LogWarning($"Had issues connecting to {uri}, succeeded after {retries} attempts");
+                    }
                 }
             }
 
@@ -475,9 +537,7 @@ namespace SynapseGames.AssetBundle
                 case BuildTarget.StandaloneOSX:
                     return RuntimePlatform.OSXPlayer;
 
-                case BuildTarget.StandaloneLinux:
                 case BuildTarget.StandaloneLinux64:
-                case BuildTarget.StandaloneLinuxUniversal:
                     return RuntimePlatform.LinuxPlayer;
 
                 case BuildTarget.Android:
@@ -525,8 +585,7 @@ namespace SynapseGames.AssetBundle
                     return BuildTarget.StandaloneWindows;
 
                 case BuildTarget.StandaloneLinux64:
-                case BuildTarget.StandaloneLinuxUniversal:
-                    return BuildTarget.StandaloneLinux;
+                    return BuildTarget.StandaloneLinux64;
 
                 default:
                     return target;
