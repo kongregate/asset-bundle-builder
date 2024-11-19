@@ -389,11 +389,13 @@ namespace SynapseGames.AssetBundle
                     break;
                 } while (useRetries && retries < PREPARE_FOR_UPLOAD_MAX_RETRIES);
 
-                // Don't allow the ambiguous case where a bundle wasn't marked for upload because the CDN could not be reached
-                if (useRetries && retries == PREPARE_FOR_UPLOAD_MAX_RETRIES) {
-                    throw new Exception($"Could not connect to server while checking {uri}");
-                } else if (retries > 0) {
-                    Debug.LogWarning($"Had issues connecting to {uri}, succeeded after {retries} attempts");
+                if (useRetries) {
+                    // Don't allow the ambiguous case where a bundle wasn't marked for upload because the CDN could not be reached
+                    if (retries == PREPARE_FOR_UPLOAD_MAX_RETRIES) {
+                        throw new Exception($"Could not connect to server while checking {uri}");
+                    } else if (retries > 0) {
+                        Debug.LogWarning($"Had issues connecting to {uri}, succeeded after {retries} attempts");
+                    }
                 }
             }
 
