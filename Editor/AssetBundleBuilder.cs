@@ -255,6 +255,13 @@ namespace SynapseGames.AssetBundle
         {
             StringBuilder log = new();
             var filesInStaging = Directory.GetFiles(StagingArea);
+            
+            // Remove empty asset bundles from the local AssetDatabase, since those get stripped from the config file
+            var unusedBundles = AssetDatabase.GetUnusedAssetBundleNames();
+            AssetDatabase.RemoveUnusedAssetBundleNames();
+            if (unusedBundles.Length > 0)
+                Debug.Log("Removed the following empty bundles: " + String.Join(",", unusedBundles));
+
             var assetBundles = AssetDatabase.GetAllAssetBundleNames();
 
             foreach (var bundle in assetBundles)
