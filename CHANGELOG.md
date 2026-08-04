@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.4]
+
+### Fixed
+* `CheckForMissingBundles` now calls `AssetDatabase.RemoveUnusedAssetBundleNames` to prevent issues with deleted asset bundles.
+
 ## [v0.2.3]
 
 ### Fixed
